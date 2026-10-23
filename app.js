@@ -1,25 +1,27 @@
 import {READING_IDS,READING_META,readingChoices,readingQuestion,selectPiece,matchWord} from './reading.mjs';
 import {ACTIVITIES} from './activities.mjs';
 import {fingerMarkup} from './hands.mjs';
-import {PROFILES_KEY,PROFILE_IDS,PROFILE_META,loadProfiles} from './profiles.mjs';
+import {PROFILES_KEY,PREVIOUS_PROFILES_KEY,DRAGONS,DRAGON_IDS,loadProfiles,cleanProfile,createChild,updateChild} from './profiles.mjs';
 import {createEvolutionGate} from './evolution.mjs';
 import {COUNT_OBJECTS,DICE_PIPS,countingQuestion} from './counting.mjs';
 import {ANIMALS,createMemory,flipMemory,settleMemory,memoryLayout} from './memory.mjs';
 import {award,rankFor,question,numberQuestion,DIFFICULTIES,difficultyFor,RANK_THRESHOLDS,POINTS_PER_RANK,parsePoints} from './engine.mjs';
 const $=s=>document.querySelector(s), $$=s=>document.querySelectorAll(s);
 function readSaved(key){try{return JSON.parse(localStorage.getItem(key));}catch{return null;}}
-const accounts=loadProfiles(readSaved(PROFILES_KEY),readSaved('dragonne-v1'));
-let activeId=accounts.activeId,state=accounts.profiles[activeId],profileChosen=false;
-const rankNames=()=>PROFILE_META[activeId].ranks;
+const accounts=loadProfiles(readSaved(PROFILES_KEY)??readSaved(PREVIOUS_PROFILES_KEY),readSaved('dragonne-v1'));
+let activeId=accounts.activeId,state=accounts.profiles[activeId]||cleanProfile(null),profileChosen=false,editingProfileId=null;
+const dragonMeta=()=>DRAGONS[state.dragonId];
+const childLabel=()=>state.name;
+const rankNames=()=>dragonMeta().ranks;
 const profile=()=>DIFFICULTIES[state.difficulty];
 let activeActivity='letters', memoryBoard=null, memoryTimer, memoryStartScore=0, afterCelebration;
 const isReading=()=>READING_IDS.includes(activeActivity);
 const activePage=()=>activeActivity==='memory'?$('#memory'):$('#game');
 let evolutionGate=null;
 let streak=0, completed=0, current=null, mistakes=0, locked=false, turnTimer, evolutionTimer, toastTimer, challengeAnswer, deferredInstall;
-function save(){try{accounts.activeId=activeId;accounts.profiles[activeId]=state;localStorage.setItem(PROFILES_KEY,JSON.stringify(accounts));renderProfileChoices();}catch{$('#storage-note').textContent='Le navigateur ne permet pas de conserver la progression. Elle reste disponible pendant cette partie.';}}
-function setDragon(el,rank,id=activeId){el.style.backgroundImage=`url('${PROFILE_META[id].sprite}')`;const i=rank-1;el.style.backgroundPosition=`${(i%5)*25}% ${Math.floor(i/5)*50}%`;}
-function render(){const rank=rankFor(state.score);$$('[data-score]').forEach(el=>el.textContent=state.score);$$('[data-rank]').forEach(el=>el.textContent=rank);$$('[data-progress]').forEach(el=>el.style.width=`${rank===15?100:(state.score%POINTS_PER_RANK)/POINTS_PER_RANK*100}%`);$$('.dragon').forEach(el=>setDragon(el,rank));$('.rank-label').innerHTML=`${rankNames()[rank-1]} · <span data-rank>${rank}</span>/15`;$('#streak').textContent=`Série · ${streak}`;$('#difficulty').textContent=`${profile().label} · ${isReading()?(activeActivity==='link-words'?'3 mots':activeActivity==='build-word'?({easy:4,medium:6,hard:8})[state.difficulty]+' choix':readingChoices(state.difficulty)+' choix'):activeActivity==='counting'?profile().numbers+' choix':activeActivity==='numbers'?profile().numbers+' choix':profile().letters+' lettres'}`;document.body.classList.toggle('reduce-motion',!state.motion);document.body.dataset.profile=activeId;$$('.dragon').forEach(el=>el.setAttribute('aria-label',PROFILE_META[activeId].companion));setDragon($('.profile-avatar'),rank);$('#profile-toggle').setAttribute('aria-label','Changer de profil, '+PROFILE_META[activeId].label);$('#greet').setAttribute('aria-label','Voir '+(activeId==='dragon'?'le dragon':'la dragonne')+' en grand');$('#evolution-title').textContent=PROFILE_META[activeId].companion+' grandit !';renderProfileChoices();renderActivities();}
+function save(){if(!activeId||!Object.hasOwn(accounts.profiles,activeId))return;try{accounts.activeId=activeId;accounts.profiles[activeId]=state;localStorage.setItem(PROFILES_KEY,JSON.stringify(accounts));renderProfileChoices();}catch{$('#storage-note').textContent='Le navigateur ne permet pas de conserver la progression. Elle reste disponible pendant cette partie.';}}
+function setDragon(el,rank,id=state.dragonId){el.style.backgroundImage=`url('${DRAGONS[id].sprite}')`;const i=rank-1;el.style.backgroundPosition=`${(i%5)*25}% ${Math.floor(i/5)*50}%`;}
+function render(){const rank=rankFor(state.score);$$('[data-score]').forEach(el=>el.textContent=state.score);$$('[data-rank]').forEach(el=>el.textContent=rank);$$('[data-progress]').forEach(el=>el.style.width=`${rank===15?100:(state.score%POINTS_PER_RANK)/POINTS_PER_RANK*100}%`);$$('.dragon').forEach(el=>setDragon(el,rank));$('.rank-label').innerHTML=`${rankNames()[rank-1]} · <span data-rank>${rank}</span>/15`;$('#streak').textContent=`Série · ${streak}`;$('#difficulty').textContent=`${profile().label} · ${isReading()?(activeActivity==='link-words'?'3 mots':activeActivity==='build-word'?({easy:4,medium:6,hard:8})[state.difficulty]+' choix':readingChoices(state.difficulty)+' choix'):activeActivity==='counting'?profile().numbers+' choix':activeActivity==='numbers'?profile().numbers+' choix':profile().letters+' lettres'}`;document.body.classList.toggle('reduce-motion',!state.motion);document.body.dataset.profile=state.dragonId;$$('.dragon').forEach(el=>el.setAttribute('aria-label',dragonMeta().companion));setDragon($('.profile-avatar'),rank);$('#profile-toggle').setAttribute('aria-label','Changer d’enfant, '+childLabel());$('#greet').setAttribute('aria-label','Voir '+(state.dragonId==='dragonne'?'la dragonne':'le dragon')+' en grand');$('#evolution-title').textContent=dragonMeta().companion+' grandit !';renderProfileChoices();renderActivities();}
 function say(text,done){
   let finished=false;const finish=()=>{if(finished)return;finished=true;done?.();};
   if(!state.sound||!('speechSynthesis'in window)){finish();return;}
@@ -69,7 +71,7 @@ function showEvolution(preview){
   const dialog=$('#evolution');dialog.dataset.preview=String(preview);$('#evolution-rank').textContent=`${rankNames()[rankFor(state.score)-1]} · Palier ${rankFor(state.score)}`;dialog.showModal();
   const dragon=dialog.querySelector('.dragon');dragon.style.animation='none';void dragon.offsetWidth;dragon.style.animation='';chime(true);
   const gate=createEvolutionGate({minDuration:state.motion?3400:1400,onComplete:()=>{if(evolutionGate===gate&&dialog.open)closeEvolution();}});evolutionGate=gate;
-  say(PROFILE_META[activeId].companion+' grandit ! Quelle belle aventure !',()=>{if(evolutionGate!==gate||!dialog.open)return;evolutionTimer=setTimeout(()=>gate.speechFinished(),350);});
+  say(dragonMeta().companion+' grandit ! Quelle belle aventure !',()=>{if(evolutionGate!==gate||!dialog.open)return;evolutionTimer=setTimeout(()=>gate.speechFinished(),350);});
 }
 function closeEvolution(){
   clearTimeout(evolutionTimer);evolutionGate?.stop();evolutionGate=null;const dialog=$('#evolution');if(!dialog.open)return;
@@ -91,7 +93,7 @@ $('#listen').onclick=listen;$('#greet').onclick=openCompanion;
 $$('[data-soon]').forEach(el=>el.onclick=()=>{toast('Cette activité arrive bientôt !');say(`${el.dataset.soon} arrive bientôt. Tu peux jouer aux lettres !`);});
 $('#settings').onclick=()=>{$('#reset-confirmation').hidden=true;$('#reset-progress').hidden=false;$('#reset-result').textContent='';const a=4+Math.floor(Math.random()*5),b=3+Math.floor(Math.random()*6);challengeAnswer=a+b;$('#challenge').textContent=`${a} + ${b}`;$('#parent-gate').hidden=false;$('#parent-options').hidden=true;$('#gate-answer').value='';$('#gate-error').textContent='';$('#parent').showModal();};
 $('#gate-form').onsubmit=e=>{e.preventDefault();if(Number($('#gate-answer').value)!==challengeAnswer){$('#gate-error').textContent='Réessaie.';return;}$('#parent-gate').hidden=true;$('#parent-options').hidden=false;renderParentSettings();};
-function renderParentSettings(){renderActivitySettings();$('#reset-confirmation').hidden=true;$('#reset-progress').hidden=false;$('#reset-result').textContent='';$('#parent-profile').value=activeId;$('#parent-profile-note').textContent='Réglages et progression de '+PROFILE_META[activeId].label+' uniquement.';$('#level').value=state.difficulty;$('#manual-points').value=state.score;$('#points-result').textContent='';previewPoints();renderDifficulty();renderRanks();$('#sound').checked=state.sound;$('#motion').checked=state.motion;}
+function renderParentSettings(){renderChildSelect();renderActivitySettings();$('#reset-confirmation').hidden=true;$('#reset-progress').hidden=false;$('#reset-result').textContent='';$('#parent-profile').value=activeId;$('#parent-profile-note').textContent='Réglages et progression de '+childLabel()+' uniquement.';$('#level').value=state.difficulty;$('#manual-points').value=state.score;$('#points-result').textContent='';previewPoints();renderDifficulty();renderRanks();$('#sound').checked=state.sound;$('#motion').checked=state.motion;}
 function renderRanks(){const rank=rankFor(state.score);$('#rank-summary').textContent=rank===15?`${state.score} étoiles · dernier palier atteint !`:`${state.score} étoiles · palier ${rank}/15 · encore ${RANK_THRESHOLDS[rank]-state.score} étoiles avant le suivant.`;$('#rank-rows').replaceChildren(...RANK_THRESHOLDS.map((points,i)=>{const row=document.createElement('tr');const level=document.createElement('th'),name=document.createElement('td'),threshold=document.createElement('td');level.textContent=String(i+1);name.textContent=rankNames()[i]+(rank===i+1?' · actuel':'');threshold.textContent=String(points);row.append(level,name,threshold);return row;}));}
 function renderDifficulty(){const p=profile();$('#difficulty-summary').textContent=`${p.letters} lettres proposées · ${p.numbers} réponses en nombres (${state.difficulty==='easy'?'doigts':state.difficulty==='medium'?'doigts et chiffres':'chiffres'}) · ${p.memoryPairs} paires (${p.memoryPairs*2} cartes) · lecture : ${readingChoices(state.difficulty)} choix · quantités de 1 à 9 avec ${p.numbers} propositions.`;}
 $('#level').onchange=e=>{state.difficulty=e.target.value;save();render();renderDifficulty();if(!activePage().hidden){clearTimeout(turnTimer);clearQuestionTransition();if(activeActivity==='memory')startMemory();else next();}};
@@ -173,25 +175,57 @@ function renderCounting(){
 
 function previewPoints(){const points=parsePoints($('#manual-points').value);$('#points-preview').textContent=points===null?'Indique un nombre entier positif ou nul.':points+' étoiles · palier '+rankFor(points)+'/15 · '+rankNames()[rankFor(points)-1];}
 $('#manual-points').oninput=previewPoints;
-$('#points-form').onsubmit=event=>{event.preventDefault();const points=parsePoints($('#manual-points').value);if(points===null){$('#points-result').textContent='Indique un nombre entier positif ou nul.';return;}applyPoints(points);$('#points-result').textContent=points+' étoiles enregistrées pour '+PROFILE_META[activeId].label+'. Palier '+rankFor(points)+'/15.';$('#reset-result').textContent='';};
+$('#points-form').onsubmit=event=>{event.preventDefault();const points=parsePoints($('#manual-points').value);if(points===null){$('#points-result').textContent='Indique un nombre entier positif ou nul.';return;}applyPoints(points);$('#points-result').textContent=points+' étoiles enregistrées pour '+childLabel()+'. Palier '+rankFor(points)+'/15.';$('#reset-result').textContent='';};
 
 function renderProfileChoices(){
-  for(const id of PROFILE_IDS){const card=$('.profile-card[data-profile="'+id+'"]'),child=accounts.profiles[id];setDragon(card.querySelector('.profile-dragon'),rankFor(child.score),id);card.querySelector('.profile-score').textContent='★ '+child.score+' · Palier '+rankFor(child.score);card.querySelector('.profile-level').textContent=DIFFICULTIES[child.difficulty].label;card.classList.toggle('selected',profileChosen&&id===activeId);}
+ const grid=$('#child-profiles');grid.replaceChildren(...accounts.order.map(id=>{
+  const child=accounts.profiles[id],card=document.createElement('button');card.type='button';card.className='profile-card';card.dataset.child=id;card.dataset.dragon=child.dragonId;card.classList.toggle('selected',profileChosen&&id===activeId);card.setAttribute('aria-label','Continuer avec '+child.name);
+  const art=document.createElement('span');art.className='child-portrait';const dragon=document.createElement('span');dragon.className='profile-dragon';dragon.setAttribute('aria-hidden','true');setDragon(dragon,rankFor(child.score),child.dragonId);
+  const name=document.createElement('strong');name.className='child-portrait-name';name.textContent=child.name;art.append(dragon,name);
+  const score=document.createElement('span');score.className='profile-score';score.textContent='★ '+child.score+' · Palier '+rankFor(child.score);
+  const level=document.createElement('small');level.className='profile-level';level.textContent=DIFFICULTIES[child.difficulty].label;card.append(art,score,level);card.onclick=()=>selectProfile(id);return card;
+ }));$('#profiles-empty').hidden=accounts.order.length!==0;
+}
+function showProfileChooser(){
+ $('#profile-chooser').hidden=false;$('#profile-create-form').hidden=true;$('#profiles-title').textContent='Qui joue ?';$('#profiles-back').hidden=!profileChosen;renderProfileChoices();if(!$('#profiles').open)$('#profiles').showModal();
 }
 function selectProfile(id){
-  if(!PROFILE_IDS.includes(id))return;
-  save();returnHome();activeId=id;accounts.activeId=id;state=accounts.profiles[id];profileChosen=true;memoryBoard=null;save();render();
-  if($('#profiles').open)$('#profiles').close();
-  if($('#parent').open)renderParentSettings();
+ if(!Object.hasOwn(accounts.profiles,id))return;
+ if(accounts.profiles[id].needsName){beginProfileEditor(id);return;}
+ save();returnHome();activeId=id;accounts.activeId=id;state=accounts.profiles[id];profileChosen=true;memoryBoard=null;save();render();
+ if($('#profiles').open)$('#profiles').close();if($('#parent').open)renderParentSettings();
 }
-$('#profile-toggle').onclick=()=>{returnHome();renderProfileChoices();$('#profiles-back').hidden=!profileChosen;$('#profiles').showModal();};
-$$('.profile-card[data-profile]').forEach(button=>button.onclick=()=>selectProfile(button.dataset.profile));
+function renderChildSelect(){
+ $('#parent-profile').replaceChildren(...accounts.order.map(id=>{const option=document.createElement('option');option.value=id;option.textContent=accounts.profiles[id].name;return option;}));$('#parent-profile').value=activeId;
+}
+function beginProfileEditor(id=null){
+ returnHome();editingProfileId=id;const child=id?accounts.profiles[id]:null;
+ $('#profile-chooser').hidden=true;$('#profile-create-form').hidden=false;$('#profiles-title').textContent=child?(child.needsName?'Quel est son prénom ?':'Modifier le profil'):'Ajouter un enfant';
+ $('#child-firstname').value=child&&!child.needsName?child.name:'';$('#profile-form-error').textContent='';$('#profile-save').textContent=child?'Enregistrer et continuer':'Créer et continuer';
+ $('#dragon-options').replaceChildren(...DRAGON_IDS.map(dragonId=>{
+  const label=document.createElement('label');label.className='dragon-option';label.dataset.dragon=dragonId;
+  const input=document.createElement('input');input.type='radio';input.name='dragon-choice';input.value=dragonId;input.required=true;input.checked=dragonId===(child?.dragonId||'dragonne');
+  const art=document.createElement('span');art.className='dragon-option-image';art.setAttribute('aria-hidden','true');setDragon(art,child?rankFor(child.score):1,dragonId);
+  const name=document.createElement('strong');name.textContent=DRAGONS[dragonId].label;label.append(input,art,name);return label;
+ }));
+ if(!$('#profiles').open)$('#profiles').showModal();$('#child-firstname').focus();
+}
+$('#profile-toggle').onclick=()=>{returnHome();showProfileChooser();};
 $('#profiles-back').onclick=()=>$('#profiles').close();
-$('#profiles').addEventListener('cancel',event=>{if(!profileChosen)event.preventDefault();});
+$('#profiles').addEventListener('cancel',event=>{if(!$('#profile-create-form').hidden){event.preventDefault();showProfileChooser();}else if(!profileChosen)event.preventDefault();});
 $('#parent-profile').onchange=event=>selectProfile(event.target.value);
-renderProfileChoices();$('#profiles').showModal();
+$('#add-child').onclick=()=>beginProfileEditor();$('#parent-add-child').onclick=()=>beginProfileEditor();$('#edit-child').onclick=()=>beginProfileEditor(activeId);
+$('#profile-cancel').onclick=showProfileChooser;
+$('#profile-create-form').onsubmit=event=>{
+ event.preventDefault();const checked=$('input[name="dragon-choice"]:checked');
+ try{
+  const details={name:$('#child-firstname').value,dragonId:checked?.value};
+  const id=editingProfileId;if(id)updateChild(accounts,id,details);const selectedId=id||createChild(accounts,details);selectProfile(selectedId);
+ }catch(error){$('#profile-form-error').textContent=error.message;}
+};
+showProfileChooser();
 
-function openCompanion(){render();$('#companion-title').textContent=activeId==='dragon'?'Mon dragon':'Ma dragonne';$('#companion-rank').textContent=rankNames()[rankFor(state.score)-1]+' · Palier '+rankFor(state.score)+'/15';$('#companion-view').showModal();}
+function openCompanion(){render();$('#companion-title').textContent=dragonMeta().label+(/^[aeiouyhàâäéèêëîïôöùûüœ]/i.test(childLabel())?' d’':' de ')+childLabel();$('#companion-rank').textContent=rankNames()[rankFor(state.score)-1]+' · Palier '+rankFor(state.score)+'/15';$('#companion-view').showModal();}
 $$('.companion-open').forEach(button=>button.onclick=openCompanion);
 $('#companion-view').addEventListener('click',event=>{if(event.target!==event.currentTarget)return;const r=event.currentTarget.getBoundingClientRect();if(event.clientX<r.left||event.clientX>r.right||event.clientY<r.top||event.clientY>r.bottom)event.currentTarget.close();});
 
@@ -208,7 +242,7 @@ function renderActivitySettings(){
     const input=document.createElement('input');input.type='checkbox';input.checked=state.activities[activity.id];input.setAttribute('aria-label','Afficher '+activity.label);input.onchange=()=>{
       state.activities[activity.id]=input.checked;save();
       if(!input.checked&&activeActivity===activity.id&&!activePage().hidden)returnHome();else renderActivities();
-      $('#activity-settings-status').textContent=(input.checked?'Activité affichée':'Activité masquée')+' pour '+PROFILE_META[activeId].label+'.';
+      $('#activity-settings-status').textContent=(input.checked?'Activité affichée':'Activité masquée')+' pour '+childLabel()+'.';
     };
     label.append(art,text,input);return label;
   }));
