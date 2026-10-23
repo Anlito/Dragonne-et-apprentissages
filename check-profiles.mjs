@@ -24,3 +24,5 @@ assert.equal(DRAGON_IDS.length,4);for(const d of Object.values(DRAGONS)){assert.
 assert.deepEqual(cleanActivities({letters:false,numbers:0,counting:'false',unknown:false}),{...cleanActivities(),letters:false});
 assert.ok(Object.values(cleanActivities(Object.fromEntries(Object.keys(cleanActivities()).map(id=>[id,false])))).every(v=>v===false));
 console.log('Profils enfants : création, prénoms, quatre dragons, choix identiques autorisés, migration sans perte, édition sans remise à zéro, isolation et restauration vérifiés.');
+
+restored.profiles[alice].activityLevels.sounds='easy';restored.profiles[alice].activityLevels.arithmetic='hard';const levels=loadProfiles(JSON.parse(JSON.stringify(restored)));assert.equal(levels.profiles[alice].activityLevels.arithmetic,'hard');assert.equal(levels.profiles[alice].activityLevels.sounds,'easy');assert.equal(levels.profiles[max].activityLevels.arithmetic,undefined);assert.equal(levels.profiles[alice].difficulty,'hard');console.log('Difficultés par activité : sauvegarde et indépendance des enfants vérifiées.');

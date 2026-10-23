@@ -7,8 +7,12 @@ export const ACTIVITIES=[
   ...[
     ['sounds','Les sons'],['complete','J’écoute et je complète'],['graphemes','Les morceaux du mot'],
     ['word-listen','J’écoute un mot'],['link-words','Je relie'],['build-word','Le mot en morceaux']
-  ].map(([id,label],readingTile)=>({id,button:id+'-start',label,readingTile}))
+  ].map(([id,label],readingTile)=>({id,button:id+'-start',label,readingTile})),
+  {id:'arithmetic',button:'arithmetic-start',label:'Les calculs + et −',mathTile:0},
+  {id:'multiply',button:'multiply-start',label:'Les multiplications',mathTile:1}
 ];
 export function cleanActivities(saved){
   return Object.fromEntries(ACTIVITIES.map(({id})=>[id,saved?.[id]!==false]));
 }
+
+export function cleanActivityLevels(saved){return Object.fromEntries(ACTIVITIES.filter(a=>['easy','medium','hard'].includes(saved?.[a.id])).map(a=>[a.id,saved[a.id]]));}

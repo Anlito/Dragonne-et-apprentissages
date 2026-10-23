@@ -69,12 +69,13 @@ export const READING_META={
  complete:{label:'J’écoute et je complète',title:'Écoute et complète',instruction:'Écoute le mot. Choisis la partie manquante.'},
  graphemes:{label:'Les morceaux du mot',title:'Complète le mot',instruction:'Complète le mot. Tu peux l’écouter avec le haut-parleur.'},
  'word-listen':{label:'J’écoute un mot',title:'Quel mot as-tu entendu ?',instruction:'Écoute le mot, puis touche son écriture.'},
- 'link-words':{label:'Je relie',title:'Écoute et relie',instruction:'Touche un haut-parleur, puis le mot qui correspond.'},
+ 'link-words':{label:'Je relie',title:'Écoute et relie',instruction:'Écoute le son 1, 2 ou 3 et relie-le au bon mot.'},
  'build-word':{label:'Le mot en morceaux',title:'Construis le mot',instruction:'Écoute le mot. Touche les morceaux dans le bon ordre.'}
 };
 export const readingChoices=level=>({easy:3,medium:4,hard:6})[level]||3;
 export function shuffle(values,random=Math.random){const a=[...values];for(let i=a.length-1;i>0;i--){const j=Math.floor(random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}return a;}
 const pick=(rows,previous,random)=>shuffle(rows.filter(x=>(x.id||x.word)!==previous),random)[0]||rows[0];
+function wordSimilarity(a,b){let score=0;for(let i=1;i<=Math.min(a.length,b.length);i++){if(a.slice(-i)===b.slice(-i))score+=i;if(a.slice(0,i)===b.slice(0,i))score+=i;}return score;}
 const options=(target,pool,count,random)=>shuffle([target,...shuffle([...new Set(pool)].filter(x=>x!==target),random).slice(0,count-1)],random);
 export function readingQuestion(kind,difficulty='easy',previous=null,random=Math.random){
  if(!READING_IDS.includes(kind))throw new RangeError('Activité inconnue');
@@ -98,11 +99,11 @@ export function readingQuestion(kind,difficulty='easy',previous=null,random=Math
    return {id:row.word,kind,target:row.word,word:row.word,choices:options(row.word,bank.map(w=>w.word),count,random),prompt:row.word,display:null};
  }
  if(kind==='link-words'){
-   const bank=WORDS.filter(w=>w.level<=maxLevel),words=shuffle(bank,random).slice(0,3).map(w=>w.word);
+   const bank=WORDS.filter(w=>w.level<=maxLevel);let rows=shuffle(bank,random);if(difficulty==='hard'){const anchor=rows[0];rows.sort((a,b)=>wordSimilarity(b.word,anchor.word)-wordSimilarity(a.word,anchor.word));}const words=rows.slice(0,3).map(w=>w.word);
    return {id:words.join('|'),kind,words,choices:shuffle(words,random),prompt:READING_META[kind].instruction,matched:[],selected:null,wrong:[[],[],[]],display:'match'};
  }
  const maxParts=difficulty==='easy'?1:difficulty==='medium'?2:3;
- const row=pick(PART_WORDS.filter(w=>w.level<=maxParts),previous,random);
+ const row=pick(PART_WORDS.filter(w=>w.level===maxParts),previous,random);
  const distractors=row.word==='chapeau'?['fa','deau','coin','bou','mi','ton']:PART_WORDS.flatMap(w=>w.parts);
  const pieces=[...row.parts,...shuffle([...new Set(distractors)].filter(x=>!row.parts.includes(x)),random).slice(0,({easy:4,medium:6,hard:8})[difficulty]-row.parts.length)];
  return {...row,id:row.word,kind,choices:shuffle(pieces,random),prompt:row.word,selected:[],wrong:[],display:'build'};

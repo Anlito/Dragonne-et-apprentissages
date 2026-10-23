@@ -17,6 +17,7 @@ for(const kind of READING_IDS)for(const difficulty of ['easy','medium','hard']){
    assert.ok(q.example);assert.ok(q.prompt.includes(q.example));
   }
   if(kind==='build-word'){
+   assert.equal(q.parts.length,{easy:2,medium:3,hard:4}[difficulty]);
    assert.equal(q.choices.length,{easy:4,medium:6,hard:8}[difficulty]);
    const bad=q.choices.findIndex(x=>x!==q.parts[0]);assert.equal(selectPiece(q,bad),'wrong');assert.equal(selectPiece(q,bad),'ignored');assert.equal(q.selected.length,0);
    for(let n=0;n<q.parts.length;n++){

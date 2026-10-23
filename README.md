@@ -4,7 +4,7 @@ Première version de la PWA Android « Dragonne-et-apprentissages », pensée po
 
 ## Fonctionnement
 
-- Les dix activités de l’accueil sont jouables : quatre jeux initiaux et six jeux de lecture, tous activables par profil dans le coin parent.
+- Les douze activités de l’accueil sont jouables : quatre jeux initiaux, six jeux de lecture et deux jeux de mathématiques, tous activables par profil dans le coin parent.
 - Lettres majuscules A–Z et consigne vocale réécoutable. Le coin parent propose un niveau global : **Facile** (6 lettres), **Moyen** (13 lettres), **Difficile** (26 lettres). Facile est le réglage par défaut. Une grille compacte est utilisée à partir de 13 lettres.
 - Le même profil définit le memory avec 4 / 8 / 16 paires (8 / 16 / 32 cartes), les chiffres avec 3 / 6 / 9 choix et le comptage de 1 à 9 à tous les niveaux, avec 3 / 6 / 9 réponses proposées. Le tableau du coin parent expose ces valeurs.
 - Comptage : une quantité exacte de pommes, étoiles, pierres précieuses ou fleurs en papier découpé apparaît. La voix demande combien il y en a, sans annoncer la réponse. Certaines questions présentent un dé avec 1 à 6 points ; les quantités 7 à 9 utilisent toujours des objets. Le haut-parleur répète la question. Le chiffre demandé ne se répète pas immédiatement.
@@ -160,3 +160,35 @@ Sources à modifier : `profiles.mjs` (registre DRAGONS, création, édition, mig
 Visuels générés avec l’outil intégré, référence : l’atlas du dragon azur. Assets de production : `assets/dragon-braise.png` et `assets/dragon-soleil.png`. Prompts : même dragon chevalier adorable en papier découpé texturé, atlas 5 × 3 de quinze évolutions avec équipement progressif, fond crème, aucun texte ni numéro ; variante rouge corail/crête bordeaux/cape cuivrée/emblème braise et variante jaune soleil/cape turquoise/emblème solaire. Les sorties originales générées restent conservées.
 
 Vérifications : tests de migration depuis les deux formats historiques, premier lancement vide, création de plusieurs enfants avec un même dragon, modification sans perte de points/réglages, doublons et restauration après rechargement. Navigateur sur localhost : prénom donné au profil existant en conservant 347 points et ses activités masquées ; création à zéro avec Braise ; saisie de 612 points et Moyen, masquage des Sons, puis changement de prénom et passage à Soleil avec conservation de tous ces réglages ; refus d’un prénom déjà utilisé ; retour à la liste nominative après rechargement. Autre origine de test vierge : aucun compte automatique, première création réussie et portrait agrandi. Vue portrait du formulaire et des cartes, vue paysage et portrait du dragon vérifiées. Aucun compte ni point public modifié pour les essais.
+
+## Correction des récompenses, niveaux par jeu et mathématiques
+
+La validation des lectures était interrompue par une sélection d’un seul élément utilisée comme une liste de boutons. La boucle a été corrigée : verrouillage, gain 10/5/1 et bonus, sauvegarde, pause de réussite puis nouvelle question reprennent normalement. `check-reward-ui.mjs` exécute le vrai gestionnaire de validation de l’application avec un DOM minimal et vérifie le gain, la sauvegarde, le callback de suite, le palier et l’absence de double récompense. Ce test reproduit la panne avant correction. Les deux jeux de maths réutilisent ce même gestionnaire.
+
+Écoute et relie : consigne parlée et écrite « Écoute le son 1, 2 ou 3 et relie-le au bon mot. » Boutons Son 1/2/3. Les trois associations conservent une récompense commune en fin de tour.
+
+### Difficulté par enfant et par activité
+
+Dans le coin parent, chaque jeu de lecture et chaque jeu de maths dispose d’un choix Niveau du profil / Facile / Moyen / Difficile. Les réglages sont stockés dans `activityLevels` pour l’enfant sélectionné. Une valeur absente reprend le niveau général ; modifier ce niveau général ne supprime pas les choix propres aux activités. Aucun changement de points, prénom, compagnon ou visibilité. Les anciennes sauvegardes reçoivent un dictionnaire vide et gardent leur comportement.
+
+Lecture : 3/4/6 réponses ; les mots en morceaux ont désormais exactement 2/3/4 morceaux corrects et 4/6/8 propositions selon le niveau. Je relie reste à trois mots : le niveau Difficile rapproche les mots par leurs débuts ou terminaisons pour travailler la discrimination. Les sons et graphèmes complexes deviennent disponibles aux niveaux supérieurs.
+
+### Les calculs + et −
+
+Facile : deux nombres et valeurs 0 à 10 ; Moyen : trois nombres et valeurs 0 à 20 ; Difficile : trois ou quatre nombres et valeurs 0 à 100. Les termes et chaque résultat intermédiaire sont entiers et non négatifs. Les tours alternent résultat à trouver, un nombre à compléter dans l’expression, et résultat à placer sur une jauge graduée. Propositions : 3/4/6.
+
+La jauge va de 0 à la limite du niveau, avec pas de 1, curseur tactile/clavier, valeur sélectionnée visible et bouton Valider. Une mauvaise position ne retire pas de points ; elle compte comme une faute. Valider plusieurs fois la même mauvaise position ne rajoute pas de faute. La récompense et l’évolution arrivent après la bonne réponse, puis le calcul suivant est proposé automatiquement.
+
+### Les multiplications
+
+Au lancement, choix d’une table de 1 à 10. Facile : multiplicateurs 1–5 et 3 réponses. Moyen : 0–10 et 4 réponses. Difficile : 0–10 et 6 réponses, avec d’autres produits de la même table parmi les distracteurs. Le multiplicateur ne se répète pas immédiatement. Le bouton Changer de table permet de revenir au choix sans perdre les points ; une nouvelle série commence.
+
+### Fichiers, visuels et vérifications
+
+`maths.mjs` : génération des expressions, trous, choix et multiplications. `app.js` : interface, validation et curseur. `activities.mjs` : registre des douze activités et normalisation des niveaux. `profiles.mjs` : conservation des niveaux par enfant. Cache PWA v22, incluant le module et le nouvel atlas.
+
+`assets/maths.png` : deux pictogrammes créés par l’outil intégré, papier découpé sauge/lavande/abricot, fond crème. Prompt : signes + et −, cartes 3/2/5 et jauge à étoile ; multiplication ×, trois rangées de quatre étoiles et cartes 3/4/12. Les illustrations sont décoratives ; les valeurs exactes des exercices sont affichées par le code.
+
+Tests : 4 020 calculs couvrant les trois modes et niveaux, limites et intermédiaires non négatifs, présence et unicité de la bonne réponse, dix tables et multiplicateur différent du précédent. Test du gestionnaire de récompense réel et tests de sauvegarde des difficultés distinctes entre enfants. Les suites de lecture, profils, progression et évolution continuent de passer.
+
+Navigateur, seulement sur localhost : une lecture validée fait passer 612 à 622 points et la question change ; 9−1+3 donne 11 (+10), 8−?+3=7 accepte 4 (+10), jauge 2−1+12 : erreur à 0 puis 13 (+5), table de 7 choisie et 7×2=14 (+10). Après rechargement, lecture en Facile et multiplication en Difficile restent distinctes pour le même enfant. Six réponses de multiplication tiennent sans défilement en 320×568 et en paysage ; réglage de la jauge au clavier vérifié. Les données publiques restent intactes.

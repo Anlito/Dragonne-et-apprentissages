@@ -1,3 +1,4 @@
+import {MATH_IDS,MATH_LEVELS,arithmeticQuestion,multiplicationQuestion} from './maths.mjs';
 import {READING_IDS,READING_META,readingChoices,readingQuestion,selectPiece,matchWord} from './reading.mjs';
 import {ACTIVITIES} from './activities.mjs';
 import {fingerMarkup} from './hands.mjs';
@@ -13,15 +14,18 @@ let activeId=accounts.activeId,state=accounts.profiles[activeId]||cleanProfile(n
 const dragonMeta=()=>DRAGONS[state.dragonId];
 const childLabel=()=>state.name;
 const rankNames=()=>dragonMeta().ranks;
-const profile=()=>DIFFICULTIES[state.difficulty];
+const activityDifficulty=()=>state.activityLevels?.[activeActivity]||state.difficulty;
+const profile=()=>DIFFICULTIES[activityDifficulty()];
 let activeActivity='letters', memoryBoard=null, memoryTimer, memoryStartScore=0, afterCelebration;
+let selectedTable=null,mathRound=0;
+const isMath=()=>MATH_IDS.includes(activeActivity);
 const isReading=()=>READING_IDS.includes(activeActivity);
 const activePage=()=>activeActivity==='memory'?$('#memory'):$('#game');
 let evolutionGate=null;
 let streak=0, completed=0, current=null, mistakes=0, locked=false, turnTimer, evolutionTimer, toastTimer, challengeAnswer, deferredInstall;
 function save(){if(!activeId||!Object.hasOwn(accounts.profiles,activeId))return;try{accounts.activeId=activeId;accounts.profiles[activeId]=state;localStorage.setItem(PROFILES_KEY,JSON.stringify(accounts));renderProfileChoices();}catch{$('#storage-note').textContent='Le navigateur ne permet pas de conserver la progression. Elle reste disponible pendant cette partie.';}}
 function setDragon(el,rank,id=state.dragonId){el.style.backgroundImage=`url('${DRAGONS[id].sprite}')`;const i=rank-1;el.style.backgroundPosition=`${(i%5)*25}% ${Math.floor(i/5)*50}%`;}
-function render(){const rank=rankFor(state.score);$$('[data-score]').forEach(el=>el.textContent=state.score);$$('[data-rank]').forEach(el=>el.textContent=rank);$$('[data-progress]').forEach(el=>el.style.width=`${rank===15?100:(state.score%POINTS_PER_RANK)/POINTS_PER_RANK*100}%`);$$('.dragon').forEach(el=>setDragon(el,rank));$('.rank-label').innerHTML=`${rankNames()[rank-1]} · <span data-rank>${rank}</span>/15`;$('#streak').textContent=`Série · ${streak}`;$('#difficulty').textContent=`${profile().label} · ${isReading()?(activeActivity==='link-words'?'3 mots':activeActivity==='build-word'?({easy:4,medium:6,hard:8})[state.difficulty]+' choix':readingChoices(state.difficulty)+' choix'):activeActivity==='counting'?profile().numbers+' choix':activeActivity==='numbers'?profile().numbers+' choix':profile().letters+' lettres'}`;document.body.classList.toggle('reduce-motion',!state.motion);document.body.dataset.profile=state.dragonId;$$('.dragon').forEach(el=>el.setAttribute('aria-label',dragonMeta().companion));setDragon($('.profile-avatar'),rank);$('#profile-toggle').setAttribute('aria-label','Changer d’enfant, '+childLabel());$('#greet').setAttribute('aria-label','Voir '+(state.dragonId==='dragonne'?'la dragonne':'le dragon')+' en grand');$('#evolution-title').textContent=dragonMeta().companion+' grandit !';renderProfileChoices();renderActivities();}
+function render(){const rank=rankFor(state.score);$$('[data-score]').forEach(el=>el.textContent=state.score);$$('[data-rank]').forEach(el=>el.textContent=rank);$$('[data-progress]').forEach(el=>el.style.width=`${rank===15?100:(state.score%POINTS_PER_RANK)/POINTS_PER_RANK*100}%`);$$('.dragon').forEach(el=>setDragon(el,rank));$('.rank-label').innerHTML=`${rankNames()[rank-1]} · <span data-rank>${rank}</span>/15`;$('#streak').textContent=`Série · ${streak}`;$('#difficulty').textContent=`${profile().label} · ${isMath()?(activeActivity==='multiply'?(selectedTable?'Table de '+selectedTable:'Tables'):current?.mode==='line'?'Jauge':MATH_LEVELS[activityDifficulty()].choices+' choix'):isReading()?(activeActivity==='link-words'?'3 mots':activeActivity==='build-word'?({easy:4,medium:6,hard:8})[activityDifficulty()]+' choix':readingChoices(activityDifficulty())+' choix'):activeActivity==='counting'?profile().numbers+' choix':activeActivity==='numbers'?profile().numbers+' choix':profile().letters+' lettres'}`;document.body.classList.toggle('reduce-motion',!state.motion);document.body.dataset.profile=state.dragonId;$$('.dragon').forEach(el=>el.setAttribute('aria-label',dragonMeta().companion));setDragon($('.profile-avatar'),rank);$('#profile-toggle').setAttribute('aria-label','Changer d’enfant, '+childLabel());$('#greet').setAttribute('aria-label','Voir '+(state.dragonId==='dragonne'?'la dragonne':'le dragon')+' en grand');$('#evolution-title').textContent=dragonMeta().companion+' grandit !';renderProfileChoices();renderActivities();}
 function say(text,done){
   let finished=false;const finish=()=>{if(finished)return;finished=true;done?.();};
   if(!state.sound||!('speechSynthesis'in window)){finish();return;}
@@ -29,19 +33,19 @@ function say(text,done){
 }
 let audio;function chime(big=false){if(!state.sound)return;try{audio??=new(window.AudioContext||window.webkitAudioContext)();audio.resume();(big?[523.25,659.25,783.99,1046.5]:[659.25,783.99]).forEach((f,i)=>{const o=audio.createOscillator(),g=audio.createGain(),t=audio.currentTime+i*.13;o.type='sine';o.frequency.value=f;g.gain.setValueAtTime(0,t);g.gain.linearRampToValueAtTime(.07,t+.015);g.gain.exponentialRampToValueAtTime(.001,t+.3);o.connect(g);g.connect(audio.destination);o.start(t);o.stop(t+.31);});}catch{}}
 function toast(text){clearTimeout(toastTimer);$('#toast').textContent=text;$('#toast').hidden=false;toastTimer=setTimeout(()=>$('#toast').hidden=true,2600);}
-function listen(){if(!current)return;$('#voice-note').classList.toggle('voice-warning',!state.sound||!('speechSynthesis'in window));if(!state.sound){$('#voice-note').textContent='La voix est désactivée dans le coin parent.';return;}if(!('speechSynthesis'in window)){$('#voice-note').textContent='La voix n’est pas disponible dans ce navigateur.';return;}say(isReading()?current.prompt:activeActivity==='counting'?current.prompt:`Trouve ${activeActivity==='numbers'?'le chiffre':'la lettre'} ${current.target}.`);$('#voice-note').textContent='Tu peux réécouter autant que tu veux.';}
+function listen(){if(!current)return;$('#voice-note').classList.toggle('voice-warning',!state.sound||!('speechSynthesis'in window));if(!state.sound){$('#voice-note').textContent='La voix est désactivée dans le coin parent.';return;}if(!('speechSynthesis'in window)){$('#voice-note').textContent='La voix n’est pas disponible dans ce navigateur.';return;}say(isReading()||isMath()?current.prompt:activeActivity==='counting'?current.prompt:`Trouve ${activeActivity==='numbers'?'le chiffre':'la lettre'} ${current.target}.`);$('#voice-note').textContent='Tu peux réécouter autant que tu veux.';}
 function dots(){$('#session-dots').replaceChildren(...Array.from({length:10},(_,i)=>{const el=document.createElement('i');if(i<completed%10||(completed>0&&completed%10===0))el.className='done';return el;}));}
 function next(){
-  if($('#game').hidden)return;if(isReading()){nextReading();return;}clearQuestionTransition();$('#game').classList.remove('question-enter');void $('#game').offsetWidth;$('#game').classList.add('question-enter');locked=false;mistakes=0;
+  if($('#game').hidden)return;if(isMath()){nextMath();return;}if(isReading()){nextReading();return;}clearQuestionTransition();$('#game').classList.remove('question-enter');void $('#game').offsetWidth;$('#game').classList.add('question-enter');locked=false;mistakes=0;
   $('#choices').hidden=false;
   const numeric=activeActivity==='numbers'||activeActivity==='counting';current=activeActivity==='counting'?countingQuestion(profile().numbers,current?.target):numeric?numberQuestion(profile().numbers,current?.target):question(profile().letters,current?.target);if(activeActivity==='counting')renderCounting();
   $('#choices').classList.toggle('alphabet',!numeric&&profile().letters>=13);$('#choices').classList.toggle('numberpad',numeric);
-  const fingerAnswers=numeric&&state.difficulty!=='hard';
+  const fingerAnswers=numeric&&activityDifficulty()!=='hard';
   $('#choices').classList.toggle('fingerpad',fingerAnswers);$('#choices').style.setProperty('--answer-rows',fingerAnswers?Math.ceil(profile().numbers/3):3);
   const values=fingerAnswers?current.choices:numeric?Array.from({length:activeActivity==='counting'?profile().maxQuantity:9},(_,i)=>i+1):current.choices;
   $('#choices').replaceChildren(...values.map(value=>{
     if(numeric&&!current.choices.includes(value)){const gap=document.createElement('span');gap.className='number-space';gap.setAttribute('aria-hidden','true');return gap;}
-    const el=document.createElement('button');el.className=numeric?'letter number-key':'letter';if(fingerAnswers){el.classList.add('finger-choice');el.innerHTML=fingerMarkup(value)+(state.difficulty==='medium'?'<span class="answer-digit">'+value+'</span>':'');el.setAttribute('aria-label',value+(value===1?' doigt':' doigts')+(state.difficulty==='medium'?' et chiffre '+value:''));}else{el.textContent=value;el.setAttribute('aria-label',(numeric?'Chiffre ':'Lettre ')+value);}el.onclick=()=>choose(value,el);return el;
+    const el=document.createElement('button');el.className=numeric?'letter number-key':'letter';if(fingerAnswers){el.classList.add('finger-choice');el.innerHTML=fingerMarkup(value)+(activityDifficulty()==='medium'?'<span class="answer-digit">'+value+'</span>':'');el.setAttribute('aria-label',value+(value===1?' doigt':' doigts')+(activityDifficulty()==='medium'?' et chiffre '+value:''));}else{el.textContent=value;el.setAttribute('aria-label',(numeric?'Chiffre ':'Lettre ')+value);}el.onclick=()=>choose(value,el);return el;
   }));
   $('#feedback').textContent='Prends ton temps, tu peux réécouter.';dots();listen();
 }
@@ -79,15 +83,15 @@ function closeEvolution(){
 }
 $('#skip-evolution').onclick=closeEvolution;$('#evolution').addEventListener('cancel',e=>{e.preventDefault();closeEvolution();});
 function startListeningActivity(kind){
-  if(READING_IDS.includes(kind)){startReading(kind);return;}
+  if(MATH_IDS.includes(kind)){startMath(kind);return;}if(READING_IDS.includes(kind)){startReading(kind);return;}
   if(!state.activities[kind])return;
-  clearTimeout(turnTimer);clearTimeout(memoryTimer);clearQuestionTransition();document.body.classList.remove('memory-active','reading-active');$('#reading-board').hidden=true;$('#choices').className='choices';$('#choices').hidden=false;document.body.classList.toggle('numbers-active',kind==='numbers'||kind==='counting');document.body.classList.toggle('counting-active',kind==='counting');activeActivity=kind;
+  clearTimeout(turnTimer);clearTimeout(memoryTimer);clearQuestionTransition();document.body.classList.remove('memory-active','reading-active','math-active');$('#reading-board').hidden=true;$('#choices').className='choices';$('#choices').hidden=false;document.body.classList.toggle('numbers-active',kind==='numbers'||kind==='counting');document.body.classList.toggle('counting-active',kind==='counting');activeActivity=kind;
   $('#memory').hidden=true;$('#welcome').hidden=true;$('#game').hidden=false;window.scrollTo(0,0);streak=0;completed=0;current=null;
   $('#count-board').hidden=kind!=='counting';$('.question h1').textContent=kind==='counting'?'Combien y en a ?':'Écoute et retrouve';$('#activity-label').textContent=kind==='counting'?'JE COMPTE':kind==='numbers'?'LES CHIFFRES':'LES LETTRES';$('#listen').setAttribute('aria-label',kind==='counting'?'Réécouter la question':kind==='numbers'?'Réécouter le chiffre':'Réécouter la lettre');$('#choices').setAttribute('aria-label',kind==='letters'?'Choisis la lettre':'Choisis le chiffre');
   render();next();fitNumberScreen();
 }
 $('#letters').onclick=()=>startListeningActivity('letters');$('#numbers-start').onclick=()=>startListeningActivity('numbers');$('#counting-start').onclick=()=>startListeningActivity('counting');
-function returnHome(){clearTimeout(evolutionTimer);evolutionGate?.stop();evolutionGate=null;if($('#evolution').open)$('#evolution').close();document.body.classList.remove('memory-active','numbers-active','counting-active','reading-active');clearTimeout(turnTimer);clearTimeout(memoryTimer);$('#memory').hidden=true;clearQuestionTransition();if('speechSynthesis'in window)speechSynthesis.cancel();$('#game').hidden=true;$('#welcome').hidden=false;window.scrollTo(0,0);current=null;locked=false;streak=0;completed=0;afterCelebration=null;render();}
+function returnHome(){clearTimeout(evolutionTimer);evolutionGate?.stop();evolutionGate=null;if($('#evolution').open)$('#evolution').close();document.body.classList.remove('memory-active','numbers-active','counting-active','reading-active','math-active');clearTimeout(turnTimer);clearTimeout(memoryTimer);$('#memory').hidden=true;clearQuestionTransition();if('speechSynthesis'in window)speechSynthesis.cancel();$('#game').hidden=true;$('#welcome').hidden=false;window.scrollTo(0,0);current=null;locked=false;streak=0;completed=0;afterCelebration=null;render();}
 $('#home').onclick=returnHome;
 $('#listen').onclick=listen;$('#greet').onclick=openCompanion;
 $$('[data-soon]').forEach(el=>el.onclick=()=>{toast('Cette activité arrive bientôt !');say(`${el.dataset.soon} arrive bientôt. Tu peux jouer aux lettres !`);});
@@ -95,8 +99,8 @@ $('#settings').onclick=()=>{$('#reset-confirmation').hidden=true;$('#reset-progr
 $('#gate-form').onsubmit=e=>{e.preventDefault();if(Number($('#gate-answer').value)!==challengeAnswer){$('#gate-error').textContent='Réessaie.';return;}$('#parent-gate').hidden=true;$('#parent-options').hidden=false;renderParentSettings();};
 function renderParentSettings(){renderChildSelect();renderActivitySettings();$('#reset-confirmation').hidden=true;$('#reset-progress').hidden=false;$('#reset-result').textContent='';$('#parent-profile').value=activeId;$('#parent-profile-note').textContent='Réglages et progression de '+childLabel()+' uniquement.';$('#level').value=state.difficulty;$('#manual-points').value=state.score;$('#points-result').textContent='';previewPoints();renderDifficulty();renderRanks();$('#sound').checked=state.sound;$('#motion').checked=state.motion;}
 function renderRanks(){const rank=rankFor(state.score);$('#rank-summary').textContent=rank===15?`${state.score} étoiles · dernier palier atteint !`:`${state.score} étoiles · palier ${rank}/15 · encore ${RANK_THRESHOLDS[rank]-state.score} étoiles avant le suivant.`;$('#rank-rows').replaceChildren(...RANK_THRESHOLDS.map((points,i)=>{const row=document.createElement('tr');const level=document.createElement('th'),name=document.createElement('td'),threshold=document.createElement('td');level.textContent=String(i+1);name.textContent=rankNames()[i]+(rank===i+1?' · actuel':'');threshold.textContent=String(points);row.append(level,name,threshold);return row;}));}
-function renderDifficulty(){const p=profile();$('#difficulty-summary').textContent=`${p.letters} lettres proposées · ${p.numbers} réponses en nombres (${state.difficulty==='easy'?'doigts':state.difficulty==='medium'?'doigts et chiffres':'chiffres'}) · ${p.memoryPairs} paires (${p.memoryPairs*2} cartes) · lecture : ${readingChoices(state.difficulty)} choix · quantités de 1 à 9 avec ${p.numbers} propositions.`;}
-$('#level').onchange=e=>{state.difficulty=e.target.value;save();render();renderDifficulty();if(!activePage().hidden){clearTimeout(turnTimer);clearQuestionTransition();if(activeActivity==='memory')startMemory();else next();}};
+function renderDifficulty(){const p=DIFFICULTIES[state.difficulty];$('#difficulty-summary').textContent=`${p.letters} lettres proposées · ${p.numbers} réponses en nombres (${state.difficulty==='easy'?'doigts':state.difficulty==='medium'?'doigts et chiffres':'chiffres'}) · ${p.memoryPairs} paires (${p.memoryPairs*2} cartes) · lecture : ${readingChoices(state.difficulty)} choix · quantités de 1 à 9 avec ${p.numbers} propositions.`;}
+$('#level').onchange=e=>{state.difficulty=e.target.value;save();render();renderDifficulty();renderActivitySettings();if(!activePage().hidden){clearTimeout(turnTimer);clearQuestionTransition();if(activeActivity==='memory')startMemory();else next();}};
 $('#sound').onchange=e=>{state.sound=e.target.checked;if(!state.sound&&'speechSynthesis'in window)speechSynthesis.cancel();save();};
 $('#motion').onchange=e=>{state.motion=e.target.checked;save();render();};
 $('#preview-evolution').onclick=()=>{if($('#question-transition').hidden)showEvolution(true);else toast('Ferme le coin parent pour terminer la récompense.');};
@@ -108,7 +112,7 @@ render();
 function startMemory(){
   if(!state.activities.memory)return;
   clearTimeout(memoryTimer);clearTimeout(turnTimer);clearQuestionTransition();
-  activeActivity='memory';document.body.classList.remove('numbers-active','counting-active','reading-active');document.body.classList.add('memory-active');$('#welcome').hidden=true;$('#game').hidden=true;$('#memory').hidden=false;$('#memory-finish').hidden=true;
+  activeActivity='memory';document.body.classList.remove('numbers-active','counting-active','reading-active','math-active');document.body.classList.add('memory-active');$('#welcome').hidden=true;$('#game').hidden=true;$('#memory').hidden=false;$('#memory-finish').hidden=true;
   streak=0;memoryStartScore=state.score;memoryBoard=createMemory(profile().memoryPairs);window.scrollTo(0,0);
   const board=$('#memory-board');board.dataset.pairs=memoryBoard.pairs;
   board.replaceChildren(...memoryBoard.cards.map((card,index)=>{
@@ -235,18 +239,20 @@ function renderActivities(){
   $('#activities-empty').hidden=visible!==0;
 }
 function renderActivitySettings(){
-  $('#activity-settings').replaceChildren(...ACTIVITIES.map(activity=>{
-    const label=document.createElement('label');label.className='activity-setting';
-    const art=document.createElement('span');art.className=activity.readingTile===undefined?'tile tile-'+activity.tile:'tile reading-tile reading-tile-'+activity.readingTile;art.setAttribute('aria-hidden','true');
-    const text=document.createElement('span');text.textContent=activity.label;
-    const input=document.createElement('input');input.type='checkbox';input.checked=state.activities[activity.id];input.setAttribute('aria-label','Afficher '+activity.label);input.onchange=()=>{
-      state.activities[activity.id]=input.checked;save();
-      if(!input.checked&&activeActivity===activity.id&&!activePage().hidden)returnHome();else renderActivities();
-      $('#activity-settings-status').textContent=(input.checked?'Activité affichée':'Activité masquée')+' pour '+childLabel()+'.';
-    };
-    label.append(art,text,input);return label;
-  }));
-  $('#activity-settings-status').textContent='';
+ $('#activity-settings').replaceChildren(...ACTIVITIES.map(activity=>{
+  const row=document.createElement('div');row.className='activity-setting';const label=document.createElement('label');label.className='activity-setting-top';
+  const art=document.createElement('span');art.className=activity.mathTile!==undefined?'tile math-tile math-tile-'+activity.mathTile:activity.readingTile===undefined?'tile tile-'+activity.tile:'tile reading-tile reading-tile-'+activity.readingTile;art.setAttribute('aria-hidden','true');
+  const text=document.createElement('span');text.textContent=activity.label;
+  const input=document.createElement('input');input.type='checkbox';input.checked=state.activities[activity.id];input.setAttribute('aria-label','Afficher '+activity.label);
+  input.onchange=()=>{state.activities[activity.id]=input.checked;save();if(!input.checked&&activeActivity===activity.id&&!activePage().hidden)returnHome();else renderActivities();$('#activity-settings-status').textContent=(input.checked?'Activité affichée':'Activité masquée')+' pour '+childLabel()+'.';};
+  label.append(art,text,input);row.append(label);
+  if(READING_IDS.includes(activity.id)||MATH_IDS.includes(activity.id)){
+   const control=document.createElement('label');control.className='activity-level-control';control.textContent='Niveau';const select=document.createElement('select');select.setAttribute('aria-label','Difficulté — '+activity.label);
+   for(const [value,name] of [['','Niveau du profil'],['easy','Facile'],['medium','Moyen'],['hard','Difficile']]){const option=document.createElement('option');option.value=value;option.textContent=name;select.append(option);}
+   select.value=state.activityLevels[activity.id]||'';select.onchange=()=>{if(select.value)state.activityLevels[activity.id]=select.value;else delete state.activityLevels[activity.id];save();render();if(activeActivity===activity.id&&!activePage().hidden){clearTimeout(turnTimer);clearQuestionTransition();next();}$('#activity-settings-status').textContent='Niveau enregistré pour '+activity.label+' · '+childLabel()+'.';};control.append(select);row.append(control);
+  }
+  return row;
+ }));$('#activity-settings-status').textContent='';
 }
 
 // Activités de lecture : même progression, mêmes transitions que les jeux existants.
@@ -254,7 +260,7 @@ for(const id of READING_IDS)$('#'+id+'-start').onclick=()=>startReading(id);
 function startReading(kind){
  if(!state.activities[kind])return;
  clearTimeout(turnTimer);clearTimeout(memoryTimer);clearQuestionTransition();
- document.body.classList.remove('memory-active','numbers-active','counting-active');document.body.classList.add('reading-active');
+ document.body.classList.remove('memory-active','numbers-active','counting-active','math-active');document.body.classList.add('reading-active');
  activeActivity=kind;$('#game').dataset.reading=kind;current=null;streak=0;completed=0;locked=false;
  $('#welcome').hidden=true;$('#memory').hidden=true;$('#game').hidden=false;$('#count-board').hidden=true;
  $('#reading-board').hidden=false;$('#choices').className='choices reading-choices';
@@ -266,7 +272,7 @@ function startReading(kind){
 function nextReading(){
  if($('#game').hidden||!isReading())return;
  clearQuestionTransition();$('#game').classList.remove('question-enter');void $('#game').offsetWidth;$('#game').classList.add('question-enter');
- current=readingQuestion(activeActivity,state.difficulty,current?.id);locked=false;mistakes=0;
+ current=readingQuestion(activeActivity,activityDifficulty(),current?.id);locked=false;mistakes=0;
  $('#feedback').textContent=READING_META[activeActivity].instruction;renderReading();dots();
  if(activeActivity==='graphemes')say(READING_META.graphemes.instruction);else listen();
 }
@@ -294,12 +300,12 @@ function renderReading(){
  });
 }
 function readingError(){mistakes++;streak=0;$('#feedback').textContent='Essaie encore. Tu peux réécouter.';render();}
-function finishReading(){
+function finishReading(continuation=nextReading){
  if(locked)return;locked=true;
- $('#choices button,#reading-board button').forEach(button=>button.disabled=true);
+ $$('#choices button,#reading-board button,#reading-board input').forEach(button=>button.disabled=true);
  const oldRank=rankFor(state.score),result=award(state.score,streak,mistakes);state.score=result.score;streak=result.streak;completed++;
  save();render();dots();$('#feedback').textContent='Bravo ! +'+result.points+' étoiles'+(result.bonus?' et +5 de bonus !':' !');
- chime();say(result.bonus?'Bravo ! Un bonus !':'Bravo, tu as trouvé !');celebrateQuestion(result,rankFor(state.score)>oldRank,nextReading);
+ chime();say(result.bonus?'Bravo ! Un bonus !':'Bravo, tu as trouvé !');celebrateQuestion(result,rankFor(state.score)>oldRank,continuation);
 }
 function chooseReadingAnswer(value,button){
  if(locked||button.disabled)return;
@@ -318,9 +324,9 @@ function renderWordLinks(){
  const lines=document.createElementNS('http://www.w3.org/2000/svg','svg');lines.classList.add('match-lines');lines.setAttribute('aria-hidden','true');match.append(lines);
  const audioColumn=document.createElement('div'),wordColumn=document.createElement('div');audioColumn.className='audio-column';wordColumn.className='word-column';
  current.words.forEach((word,index)=>{
-  const button=document.createElement('button');button.className='audio-word';button.dataset.audio=index;button.classList.toggle('selected',current.selected===index);button.classList.toggle('matched',current.matched.includes(index));button.setAttribute('aria-label','Écouter le mot '+(index+1));button.setAttribute('aria-pressed',String(current.selected===index));
+  const button=document.createElement('button');button.className='audio-word';button.dataset.audio=index;button.classList.toggle('selected',current.selected===index);button.classList.toggle('matched',current.matched.includes(index));button.setAttribute('aria-label','Écouter le son '+(index+1));button.setAttribute('aria-pressed',String(current.selected===index));
   const icon=document.createElement('span'),number=document.createElement('b');icon.innerHTML='<svg viewBox="0 0 48 48"><path d="M7 18h9l11-9v30L16 30H7zM33 15c6 5 6 13 0 18M39 8c11 10 11 22 0 32"/></svg>';icon.setAttribute('aria-hidden','true');number.textContent=index+1;button.append(icon,number);
-  button.onclick=()=>{if(locked)return;if(!current.matched.includes(index)){current.selected=index;renderReading();$('#feedback').textContent='Touche le mot qui correspond au bouton '+(index+1)+'.';}say(word);};audioColumn.append(button);
+  button.onclick=()=>{if(locked)return;if(!current.matched.includes(index)){current.selected=index;renderReading();$('#feedback').textContent='Relie le son '+(index+1)+' au bon mot.';}say(word);};audioColumn.append(button);
  });
  current.choices.forEach((word,index)=>{
   const button=document.createElement('button');button.className='linked-word';button.textContent=word;button.dataset.word=index;
@@ -329,9 +335,9 @@ function renderWordLinks(){
   if(matched!==undefined){const badge=document.createElement('b');badge.textContent=matched+1;button.prepend(badge);}
   const removed=current.selected!==null&&current.wrong[current.selected].includes(index);button.classList.toggle('removed',removed);
   button.onclick=()=>{
-   if(locked)return;if(current.selected===null){$('#feedback').textContent='Touche d’abord un haut-parleur.';return;}
+   if(locked)return;if(current.selected===null){$('#feedback').textContent='Écoute le son 1, 2 ou 3 et relie-le au bon mot.';return;}
    const result=matchWord(current,index);if(result==='ignored')return;if(result==='wrong')readingError();
-   renderReading();if(result==='pair'){$('#feedback').textContent='Bien associé ! Écoute un autre bouton.';chime();}if(result==='complete')finishReading();
+   renderReading();if(result==='pair'){$('#feedback').textContent='Bien associé ! Écoute un autre son.';chime();}if(result==='complete')finishReading();
   };wordColumn.append(button);
  });
  match.append(audioColumn,wordColumn);board.append(match);requestAnimationFrame(drawWordLinks);
@@ -347,3 +353,57 @@ function drawWordLinks(){
  });
 }
 window.addEventListener('resize',drawWordLinks);
+
+// Mathématiques : résultat, terme manquant ou position sur une droite graduée.
+for(const kind of MATH_IDS)$('#'+kind+'-start').onclick=()=>startMath(kind);
+function startMath(kind){
+ if(!state.activities[kind])return;
+ clearTimeout(turnTimer);clearTimeout(memoryTimer);clearQuestionTransition();
+ document.body.classList.remove('memory-active','numbers-active','counting-active');document.body.classList.add('reading-active','math-active');
+ activeActivity=kind;current=null;streak=0;completed=0;locked=false;mathRound=0;selectedTable=null;
+ $('#welcome').hidden=true;$('#memory').hidden=true;$('#game').hidden=false;$('#count-board').hidden=true;$('#game').dataset.reading=kind;
+ $('#choices').className='choices reading-choices math-choices';$('#listen').setAttribute('aria-label','Réécouter le calcul');$('#choices').setAttribute('aria-label','Choisis la réponse du calcul');
+ $('#activity-label').textContent=kind==='multiply'?'LES MULTIPLICATIONS':'LES CALCULS + ET −';window.scrollTo(0,0);
+ if(kind==='multiply')showTables();else nextMath();
+}
+function showTables(){
+ clearTimeout(turnTimer);clearQuestionTransition();selectedTable=null;locked=true;current={kind:'table-picker',prompt:'Choisis la table de multiplication que tu veux travailler.'};
+ $('#game').dataset.mathPhase='tables';$('#reading-board').hidden=true;$('#reading-board').replaceChildren();$('#choices').hidden=false;$('#choices').replaceChildren();$('#choices').style.setProperty('--reading-rows',2);
+ $('.question h1').textContent='Quelle table veux-tu ?';$('#listen').setAttribute('aria-label','Écouter la consigne');
+ for(let n=1;n<=10;n++){const button=document.createElement('button');button.type='button';button.className='letter reading-choice table-choice';button.textContent=n;button.setAttribute('aria-label','Travailler la table de '+n);button.onclick=()=>{selectedTable=n;current=null;streak=0;completed=0;nextMath();};$('#choices').append(button);}
+ $('#feedback').textContent='Choisis une table de 1 à 10.';render();dots();listen();
+}
+function nextMath(){
+ if($('#game').hidden||!isMath())return;
+ if(activeActivity==='multiply'&&!selectedTable){showTables();return;}
+ clearQuestionTransition();$('#game').classList.remove('question-enter');void $('#game').offsetWidth;$('#game').classList.add('question-enter');locked=false;mistakes=0;
+ const previous=current;current=activeActivity==='arithmetic'?arithmeticQuestion(activityDifficulty(),['answer','missing','line'][mathRound++%3],previous?.id):multiplicationQuestion(selectedTable,activityDifficulty(),previous?.factor);
+ $('#game').dataset.mathPhase=current.mode;$('.question h1').textContent=current.mode==='line'?'Place le résultat':current.mode==='missing'?'Quel nombre manque ?':'À toi de calculer !';
+ $('#listen').setAttribute('aria-label','Réécouter le calcul');$('#feedback').textContent=current.mode==='line'?'Déplace le curseur puis valide.':'Choisis le nombre qui complète le calcul.';
+ renderMath();render();dots();listen();
+}
+function renderMath(){
+ const board=$('#reading-board'),choices=$('#choices');board.hidden=false;board.replaceChildren();choices.replaceChildren();choices.hidden=current.mode==='line';choices.dataset.count=current.choices.length;choices.style.setProperty('--reading-rows',Math.ceil(current.choices.length/3));
+ if(activeActivity==='multiply'){const change=document.createElement('button');change.className='change-table';change.textContent='↻ Table de '+selectedTable;change.setAttribute('aria-label','Changer de table');change.onclick=()=>{streak=0;completed=0;showTables();};board.append(change);}
+ const equation=document.createElement('div');equation.className='equation';equation.setAttribute('aria-label',current.equation);
+ const parts=current.equation.split('?');const before=document.createElement('span'),blank=document.createElement('span'),after=document.createElement('span');before.textContent=parts[0];blank.className='math-blank';blank.textContent='?';after.textContent=parts[1]||'';equation.append(before,blank,after);board.append(equation);
+ if(current.mode==='line'){renderMathLine(board);return;}
+ for(const value of current.choices){const button=document.createElement('button');button.type='button';button.className='letter reading-choice';button.textContent=value;button.setAttribute('aria-label','Réponse '+value);button.onclick=()=>chooseMath(value,button);choices.append(button);}
+}
+function renderMathLine(board){
+ const line=document.createElement('div');line.className='math-numberline';
+ const output=document.createElement('output');output.className='range-bubble';output.textContent='0';output.setAttribute('for','math-position');
+ const slider=document.createElement('input');slider.type='range';slider.id='math-position';slider.min=0;slider.max=current.limit;slider.step=1;slider.value=0;slider.setAttribute('aria-label','Position sur la jauge de 0 à '+current.limit);slider.oninput=()=>{if(locked)return;output.textContent=slider.value;line.classList.remove('line-wrong');slider.style.setProperty('--range-fill',Number(slider.value)/current.limit*100+'%');};
+ const ticks=document.createElement('div');ticks.className='numberline-ticks';for(let i=0;i<=5;i++){const span=document.createElement('span');span.textContent=Math.round(i*current.limit/5);ticks.append(span);}
+ const validate=document.createElement('button');validate.className='primary validate-position';validate.textContent='✓ Valider';validate.setAttribute('aria-label','Valider la position');validate.onclick=()=>chooseMath(Number(slider.value),validate);
+ line.append(output,slider,ticks,validate);board.append(line);current.lineAttempts=[];
+}
+function chooseMath(value,button){
+ if(locked||button.disabled)return;
+ if(value!==current.target){
+  if(current.mode==='line'){if(current.lineAttempts.includes(value))return;current.lineAttempts.push(value);$('.math-numberline').classList.add('line-wrong');}
+  else{button.classList.add('removed');button.disabled=true;button.setAttribute('aria-hidden','true');}
+  readingError();$('#feedback').textContent=current.mode==='line'?'Essaie une autre position sur la jauge.':'Un choix en moins. Essaie encore !';return;
+ }
+ $('.equation').setAttribute('aria-label',current.equation.replace('?',String(value)));$('.math-blank').textContent=value;$('.math-blank').classList.add('filled');if(current.mode!=='line')button.classList.add('correct');finishReading(nextMath);
+}
