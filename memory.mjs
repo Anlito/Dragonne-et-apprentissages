@@ -1,4 +1,10 @@
 export const ANIMALS=['Le chat','Le chien','Le lapin','L’ours','Le renard','Le panda','Le lion','Le koala','La grenouille','La tortue','Le poisson','La baleine','L’éléphant','La girafe','Le cochon','Le hibou'];
+export function memoryLayout(count,width,height,gap=8){
+  const candidates=count===8?[2,4]:[4,8];
+  let best=null;
+  for(const columns of candidates){const rows=count/columns;const size=Math.min((width-(columns-1)*gap)/columns,(height-(rows-1)*gap)/rows);if(!best||size>best.size)best={columns,rows,size};}
+  return best;
+}
 function shuffle(items,random){for(let i=items.length-1;i>0;i--){const j=Math.floor(random()*(i+1));[items[i],items[j]]=[items[j],items[i]];}return items;}
 export function createMemory(pairs,random=Math.random){
   if(![4,8,16].includes(pairs))throw new RangeError('Nombre de paires invalide');

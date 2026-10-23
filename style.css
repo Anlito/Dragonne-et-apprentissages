@@ -11,3 +11,17 @@
 @media(max-height:550px) and (orientation:landscape){.activities{gap:10px}.tile{aspect-ratio:1.95}.activity>span:last-child{padding:4px 10px 0}.play{width:23px;height:23px}footer{margin:12px 0 0}}
 
 @media(max-height:550px) and (orientation:landscape){#memory .pill{padding:7px 12px;font-size:12px}.memory-heading{margin:6px auto}.memory-heading .round{width:32px;height:32px}.memory-card,.memory-board[data-pairs="16"] .memory-card{aspect-ratio:1.55}#memory:not([hidden])~footer{display:none}}
+
+body.memory-active{height:var(--memory-viewport,100dvh);min-height:0;overflow:hidden}
+body.memory-active #app{height:var(--memory-viewport,100dvh);padding: max(10px,env(safe-area-inset-top)) max(20px,env(safe-area-inset-right)) max(12px,env(safe-area-inset-bottom)) max(20px,env(safe-area-inset-left));display:flex;flex-direction:column;min-height:0}
+body.memory-active header{flex-shrink:0}body.memory-active footer{display:none}
+body.memory-active #memory{position:relative;display:flex;flex-direction:column;flex:1;min-height:0;margin-top:12px}
+body.memory-active .game-top{flex-shrink:0}
+body.memory-active .memory-heading{width:100%;flex-shrink:0;margin:10px auto;gap:10px}
+body.memory-active .memory-heading h1{font-size:clamp(22px,4vw,32px)}
+body.memory-active .memory-heading .memory-dragon{width:60px}
+body.memory-active #memory-board{display:grid;flex:1;min-height:0;width:100%;max-width:1000px;max-height:100%;margin:0 auto;grid-template-columns:repeat(var(--memory-columns,4),minmax(0,1fr));grid-template-rows:repeat(var(--memory-rows,8),minmax(0,1fr));gap:var(--memory-gap,8px);padding:4px 4px 7px}
+body.memory-active #memory-board .memory-card{aspect-ratio:auto;width:100%;height:100%;min-height:0}
+body.memory-active #memory-feedback{flex-shrink:0;font-size:12px;line-height:1.35;min-height:17px;margin:10px 0 0}
+body.memory-active #memory-finish{position:absolute;inset:0;z-index:3;display:flex;flex-direction:column;align-items:center;justify-content:center;margin:0;padding:15px;text-align:center;background:#f8f2e5ed;border-radius:25px;backdrop-filter:blur(4px)}
+@media(max-height:600px){body.memory-active header .round{width:38px;height:38px}body.memory-active .game-top .pill{padding:6px 10px;font-size:11px}body.memory-active .memory-heading{margin:6px auto}body.memory-active .memory-heading .memory-dragon,body.memory-active .memory-heading .eyebrow{display:none}body.memory-active .memory-heading .round{width:32px;height:32px}body.memory-active .memory-heading h1{font-size:22px;margin:0}body.memory-active #memory{margin-top:9px}body.memory-active #memory-feedback{margin-top:7px;font-size:11px}}

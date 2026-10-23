@@ -1,4 +1,4 @@
-import {ANIMALS,createMemory,flipMemory,settleMemory} from './memory.mjs';
+import {ANIMALS,createMemory,flipMemory,settleMemory,memoryLayout} from './memory.mjs';
 import {award,rankFor,question,DIFFICULTIES,difficultyFor,RANK_THRESHOLDS,POINTS_PER_RANK} from './engine.mjs';
 const $=s=>document.querySelector(s), $$=s=>document.querySelectorAll(s);
 const key='dragonne-v1';
@@ -42,8 +42,8 @@ function finishQuestionTransition(evolves){
 function showEvolution(preview){clearTimeout(turnTimer);const dialog=$('#evolution');dialog.dataset.preview=String(preview);$('#evolution-rank').textContent=`${names[rankFor(state.score)-1]} · Palier ${rankFor(state.score)}`;dialog.showModal();const dragon=dialog.querySelector('.dragon');dragon.style.animation='none';void dragon.offsetWidth;dragon.style.animation='';chime(true);say('Ta dragonne grandit ! Quelle belle aventure !');clearTimeout(evolutionTimer);evolutionTimer=setTimeout(closeEvolution,state.motion?3400:1400);}
 function closeEvolution(){clearTimeout(evolutionTimer);const dialog=$('#evolution');const preview=dialog.dataset.preview==='true';dialog.close();if(!preview&&!activePage().hidden)afterCelebration();}
 $('#skip-evolution').onclick=closeEvolution;$('#evolution').addEventListener('cancel',e=>{e.preventDefault();closeEvolution();});
-$('#letters').onclick=()=>{activeActivity='letters';clearTimeout(memoryTimer);$('#memory').hidden=true;$('#welcome').hidden=true;$('#game').hidden=false;window.scrollTo(0,0);streak=0;completed=0;render();next();};
-$('#home').onclick=()=>{clearTimeout(turnTimer);clearTimeout(memoryTimer);$('#memory').hidden=true;clearQuestionTransition();if('speechSynthesis'in window)speechSynthesis.cancel();$('#game').hidden=true;$('#welcome').hidden=false;window.scrollTo(0,0);current=null;locked=false;};
+$('#letters').onclick=()=>{document.body.classList.remove('memory-active');activeActivity='letters';clearTimeout(memoryTimer);$('#memory').hidden=true;$('#welcome').hidden=true;$('#game').hidden=false;window.scrollTo(0,0);streak=0;completed=0;render();next();};
+$('#home').onclick=()=>{document.body.classList.remove('memory-active');clearTimeout(turnTimer);clearTimeout(memoryTimer);$('#memory').hidden=true;clearQuestionTransition();if('speechSynthesis'in window)speechSynthesis.cancel();$('#game').hidden=true;$('#welcome').hidden=false;window.scrollTo(0,0);current=null;locked=false;};
 $('#listen').onclick=listen;$('#greet').onclick=()=>say('Coucou ! Je suis ta dragonne. Viens jouer avec moi !');
 $$('[data-soon]').forEach(el=>el.onclick=()=>{toast('Cette activité arrive bientôt !');say(`${el.dataset.soon} arrive bientôt. Tu peux jouer aux lettres !`);});
 $('#settings').onclick=()=>{const a=4+Math.floor(Math.random()*5),b=3+Math.floor(Math.random()*6);challengeAnswer=a+b;$('#challenge').textContent=`${a} + ${b}`;$('#parent-gate').hidden=false;$('#parent-options').hidden=true;$('#gate-answer').value='';$('#gate-error').textContent='';$('#parent').showModal();};
@@ -61,7 +61,7 @@ render();
 
 function startMemory(){
   clearTimeout(memoryTimer);clearTimeout(turnTimer);clearQuestionTransition();
-  activeActivity='memory';$('#welcome').hidden=true;$('#game').hidden=true;$('#memory').hidden=false;$('#memory-finish').hidden=true;
+  activeActivity='memory';document.body.classList.add('memory-active');$('#welcome').hidden=true;$('#game').hidden=true;$('#memory').hidden=false;$('#memory-finish').hidden=true;
   streak=0;memoryStartScore=state.score;memoryBoard=createMemory(profile().memoryPairs);window.scrollTo(0,0);
   const board=$('#memory-board');board.dataset.pairs=memoryBoard.pairs;
   board.replaceChildren(...memoryBoard.cards.map((card,index)=>{
@@ -70,7 +70,7 @@ function startMemory(){
     const front=document.createElement('span');front.className='memory-front';front.setAttribute('aria-hidden','true');
     const animal=document.createElement('span');animal.className='animal-face';animal.style.backgroundPosition=((card.animal%4)*100/3)+'% '+(Math.floor(card.animal/4)*100/3)+'%';front.append(animal);button.append(back,front);button.onclick=()=>chooseMemory(index);return button;
   }));
-  $('#memory-feedback').textContent='Retourne deux cartes pour trouver une paire.';renderMemory();render();memoryHelp();
+  $('#memory-feedback').textContent='Retourne deux cartes pour trouver une paire.';renderMemory();render();fitMemoryScreen();memoryHelp();
 }
 function renderMemory(){
   $('#memory-found').textContent=memoryBoard.found+' / '+memoryBoard.pairs+' paires';$('#memory-difficulty').textContent=profile().label;
@@ -87,3 +87,18 @@ function chooseMemory(index){
 }
 function finishMemoryMismatch(){if($('#memory').hidden)return;if($('#parent').open){memoryTimer=setTimeout(finishMemoryMismatch,300);return;}settleMemory(memoryBoard);renderMemory();$('#memory-feedback').textContent='Retourne deux autres cartes. Tu peux y arriver !';}
 $('#memory-start').onclick=startMemory;$('#memory-replay').onclick=startMemory;$('#memory-help').onclick=memoryHelp;
+
+let memoryFitFrame;
+function fitMemoryScreen(){
+  cancelAnimationFrame(memoryFitFrame);
+  memoryFitFrame=requestAnimationFrame(()=>{
+    if($('#memory').hidden||!memoryBoard)return;
+    document.documentElement.style.setProperty('--memory-viewport',(window.visualViewport?.height||window.innerHeight)+'px');
+    const board=$('#memory-board'),gap=window.innerWidth<500?8:10;
+    const layout=memoryLayout(memoryBoard.cards.length,board.clientWidth,board.clientHeight,gap);
+    board.style.setProperty('--memory-columns',layout.columns);board.style.setProperty('--memory-rows',layout.rows);board.style.setProperty('--memory-gap',gap+'px');
+  });
+}
+window.addEventListener('resize',fitMemoryScreen);
+window.visualViewport?.addEventListener('resize',fitMemoryScreen);
+if('ResizeObserver'in window)new ResizeObserver(fitMemoryScreen).observe($('#memory-board'));
