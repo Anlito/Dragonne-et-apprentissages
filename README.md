@@ -222,3 +222,12 @@ Contenu à enrichir : `traps.mjs`, banque de 24 mots avec découpage, paire et n
 
 Tests : 5 760 questions de lecture, 900 tirages des pièges avec contrôle de reconstruction des mots et des niveaux ; toutes les positions et cibles des échelles 0–10, 0–20, 0–100 testées pour les seuils, points et bonus. Régression du gestionnaire réel de récompenses et suites existantes réussies.
 Navigateur localhost : bateau complété avec b (+10), syllabes seules dans les choix, calcul et nombre manquant sans bouton son, jauge 0–100 sans valeur de curseur ; position 50 pour résultat 47 : +5 points, série remise à zéro et passage au calcul suivant. Tests effectués sur des profils locaux uniquement.
+
+## Validation de fluence et nombres dans les deux sens (v25)
+
+Fluence : la sélection du dernier mot est confirmée par un bouton vert avec une coche ✓, nommé « Valider le dernier mot lu » pour l’accessibilité. Il apparaît à la fin de la minute et reste désactivé tant qu’aucun mot n’est choisi. L’option secondaire « 0 mot lu » sert à enregistrer un essai sans mot ; elle est volontairement discrète et demande également la coche pour confirmer. Les consignes vocales et écrites indiquent la coche verte. Les records, le chrono et la sauvegarde sont conservés.
+
+Chiffres et lettres : les questions alternent maintenant dans les deux sens. Exemple « quarante-sept » → 47, puis 12 → « douze ». Les limites et nombres de choix restent 0–9/3, 0–20/4, 0–100/6 selon le niveau. La voix lit la consigne adaptée et ne prononce pas la réponse. Les réponses écrites utilisent deux colonnes avec retour à la ligne pour les nombres longs. Points, bonus, retrait d’un mauvais choix et transitions sont inchangés.
+
+Fichiers : `number-words.mjs` pour la génération et l’alternance ; `app.js`, `index.html`, `style.css` pour les consignes, la coche et les réponses écrites. Cache v25. Tests de 1 500 questions couvrant l’alternance, les limites, l’unicité des choix, la présence de la bonne réponse, l’orthographe et l’absence de répétition immédiate du nombre ; tests de lecture et récompenses réussis.
+Vérification navigateur sur localhost : quatre-vingt-deux → 82 (+10), question suivante 47 → quarante-sept (+10), réponses longues lisibles en 360×640. Minute complète de fluence : coche absente pendant la lecture, désactivée à zéro sans sélection, puis verte et active après choix du dernier mot ; validation enregistrée. Aucun profil public modifié.

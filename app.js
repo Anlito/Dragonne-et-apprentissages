@@ -276,11 +276,13 @@ function nextReading(){
  if($('#game').hidden||!isReading())return;
  clearQuestionTransition();$('#game').classList.remove('question-enter');void $('#game').offsetWidth;$('#game').classList.add('question-enter');
  current=readingQuestion(activeActivity,activityDifficulty(),current?.id);locked=false;mistakes=0;
- $('#feedback').textContent=READING_META[activeActivity].instruction;renderReading();dots();
+ $('#feedback').textContent=activeActivity==='number-words'?current.prompt:READING_META[activeActivity].instruction;renderReading();dots();
  if(activeActivity==='graphemes')say(READING_META.graphemes.instruction);else listen();
 }
 function renderReading(){
  const board=$('#reading-board'),choices=$('#choices');board.replaceChildren();choices.replaceChildren();
+ $('#game').classList.toggle('number-spelling',activeActivity==='number-words'&&current.direction==='digits-to-letters');
+ if(activeActivity==='number-words')$('.question h1').textContent=current.direction==='digits-to-letters'?'Comment s’écrit ce nombre ?':'Quel est ce nombre ?';
  board.hidden=!current.display;choices.hidden=current.display==='match';choices.dataset.count=current.choices.length;choices.style.setProperty('--reading-rows',Math.ceil(current.choices.length/3));
  if(current.display==='match'){renderWordLinks();return;}
  if(current.display==='number-word'){const word=document.createElement('div');word.className='number-word-card';word.textContent=current.label;board.append(word);}
@@ -428,7 +430,7 @@ function startFluency(){
  document.body.classList.remove('memory-active','numbers-active','counting-active','reading-active','math-active');document.body.classList.add('fluency-active');
  $('#welcome').hidden=true;$('#game').hidden=true;$('#memory').hidden=true;$('#fluence').hidden=false;
  fluencyAttempt={text:state.fluency.text,phase:'ready',selected:null,seconds:60,outcome:null};render();renderFluency();window.scrollTo(0,0);
- say('Lis pendant une minute. Quand le chrono sera terminé, touche le dernier mot que tu as lu, puis valide ta lecture. Le drapeau montre ton record.');
+ say('Lis pendant une minute. Quand le chrono sera terminé, touche le dernier mot que tu as lu, puis touche la coche verte. Le drapeau montre ton record.');
 }
 function renderFluency(){
  if(!fluencyAttempt)return;const attempt=fluencyAttempt,record=fluencyRecord(state.fluency,attempt.text),count=fluencyWordCount(attempt.text),choosing=attempt.phase==='choose';
@@ -436,7 +438,7 @@ function renderFluency(){
  $('#fluence-timer').classList.toggle('timer-ended',attempt.seconds===0);$('#fluence-best').textContent=record.best?'⚑ Record : '+record.best+' mots':'⚑ Ton premier record';
  $('#fluence-history').textContent=record.attempts?'Dernier essai : '+record.last+' mots · '+(record.best<count?'Objectif : atteindre le mot '+(record.best+1)+' !':'Tu as déjà atteint la fin du texte !'):'Le drapeau indiquera ton meilleur mot après ton premier essai.';
  $('#fluence-run').disabled=!['ready','result'].includes(attempt.phase);$('#fluence-run').textContent=attempt.phase==='reading'?'Lecture en cours…':attempt.phase==='choose'||attempt.phase==='reward'?'Minute terminée':attempt.phase==='result'?'↻ Réessayer pendant 1 minute':'▶ Lire pendant 1 minute';
- $('#fluence-instruction').textContent=attempt.phase==='ready'?'Commence au début du texte. Appuie quand tu es prêt.':attempt.phase==='reading'?'À toi de lire ! Le chrono dure une minute.':choosing?'Touche le dernier mot lu, puis valide ta lecture.':attempt.phase==='reward'?'Lecture enregistrée !':'Tu peux recommencer depuis le début pour dépasser ton record.';
+ $('#fluence-instruction').textContent=attempt.phase==='ready'?'Commence au début du texte. Appuie quand tu es prêt.':attempt.phase==='reading'?'À toi de lire ! Le chrono dure une minute.':choosing?'Touche le dernier mot lu, puis la coche verte.':attempt.phase==='reward'?'Lecture enregistrée !':'Tu peux recommencer depuis le début pour dépasser ton record.';
  $('#fluence-result').textContent=choosing&&attempt.selected!==null?attempt.selected+' mots atteints. Tu peux encore changer le mot sélectionné.':attempt.phase==='result'?(attempt.outcome?.newRecord?'Nouveau record ! ':'')+(attempt.outcome?.last??0)+' mots atteints · record : '+record.best+' mots.':'';
  const text=$('#fluence-text');text.replaceChildren(...fluencyTokens(attempt.text).map(token=>{
   if(!token.index)return document.createTextNode(token.text);
@@ -453,10 +455,10 @@ $('#fluence-run').onclick=()=>{
  $('#fluence-text').scrollIntoView({block:'start',behavior:'auto'});
  fluencyClock?.stop();fluencyClock=createFluencyClock({
   onTick:seconds=>{if(fluencyAttempt!==attempt||attempt.phase!=='reading')return;attempt.seconds=seconds;$('#fluence-timer').textContent=Math.floor(seconds/60)+':'+String(seconds%60).padStart(2,'0');$('#fluence-timer').setAttribute('aria-label','Temps restant : '+seconds+' secondes');},
-  onEnd:()=>{if(fluencyAttempt!==attempt||activeActivity!=='fluency')return;attempt.phase='choose';attempt.seconds=0;renderFluency();chime();say('La minute est terminée. Touche le dernier mot que tu as lu, puis valide ta lecture.');}
+  onEnd:()=>{if(fluencyAttempt!==attempt||activeActivity!=='fluency')return;attempt.phase='choose';attempt.seconds=0;renderFluency();chime();say('La minute est terminée. Touche le dernier mot que tu as lu, puis touche la coche verte.');}
  });fluencyClock.start();
 };
-$('#fluence-help').onclick=()=>{if(fluencyAttempt?.phase==='reading'){say('Continue à lire jusqu’à la fin du chrono.');return;}say('Lis pendant une minute. À la fin, touche le dernier mot lu et valide. Le mot doré avec le drapeau est ton record. Chaque nouvel essai repart du début.');};
+$('#fluence-help').onclick=()=>{if(fluencyAttempt?.phase==='reading'){say('Continue à lire jusqu’à la fin du chrono.');return;}say('Lis pendant une minute. À la fin, touche le dernier mot lu puis la coche verte. Le mot doré avec le drapeau est ton record. Chaque nouvel essai repart du début.');};
 $('#fluence-none').onclick=()=>{if(fluencyAttempt?.phase!=='choose')return;fluencyAttempt.selected=0;renderFluency();};
 $('#fluence-confirm').onclick=()=>{
  const attempt=fluencyAttempt;if(!attempt||attempt.phase!=='choose'||attempt.selected===null||locked)return;
