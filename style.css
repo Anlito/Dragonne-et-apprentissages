@@ -58,3 +58,5 @@ body.counting-active #choices.numberpad{max-height:280px}body.counting-active #f
 .count-sprite{width:100%;height:100%;aspect-ratio:auto;background:none;stroke:none;fill:none;overflow:hidden}.paper-die{padding:clamp(6px,2dvh,14px);gap:7px}
 
 body.counting-active #choices.numberpad{grid-template-rows:repeat(var(--answer-rows,3),minmax(0,1fr));max-height:calc(var(--answer-rows,3)*85px)}
+
+.transfer-zone{border-top:1px solid #ddcfe4;margin-top:24px;padding-top:8px}.transfer-zone input{max-width:240px}#points-preview{font-weight:700}#points-result{font-weight:700;color:#527442}

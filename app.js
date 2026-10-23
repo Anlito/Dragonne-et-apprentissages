@@ -1,6 +1,7 @@
+import {createEvolutionGate} from './evolution.mjs';
 import {COUNT_OBJECTS,DICE_PIPS,countingQuestion} from './counting.mjs';
 import {ANIMALS,createMemory,flipMemory,settleMemory,memoryLayout} from './memory.mjs';
-import {award,rankFor,question,numberQuestion,DIFFICULTIES,difficultyFor,RANK_THRESHOLDS,POINTS_PER_RANK} from './engine.mjs';
+import {award,rankFor,question,numberQuestion,DIFFICULTIES,difficultyFor,RANK_THRESHOLDS,POINTS_PER_RANK,parsePoints} from './engine.mjs';
 const $=s=>document.querySelector(s), $$=s=>document.querySelectorAll(s);
 const key='dragonne-v1';
 let state={score:0,difficulty:'easy',sound:true,motion:true};
@@ -8,19 +9,24 @@ try{const saved=JSON.parse(localStorage.getItem(key));if(saved){state.score=Numb
 const profile=()=>DIFFICULTIES[state.difficulty];
 let activeActivity='letters', memoryBoard=null, memoryTimer, memoryStartScore=0, afterCelebration;
 const activePage=()=>activeActivity==='memory'?$('#memory'):$('#game');
+let evolutionGate=null;
 let streak=0, completed=0, current=null, mistakes=0, locked=false, turnTimer, evolutionTimer, toastTimer, challengeAnswer, deferredInstall;
 const names=['Petite aventurière','Petite exploratrice','Première cape','Jeune écuyère','Écuyère courageuse','Écuyère étoilée','Petite chevalière','Chevalière vaillante','Chevalière du royaume','Gardienne des feuilles','Gardienne des étoiles','Gardienne de la lumière','Chevalière dorée','Héroïne couronnée','Héroïne du soleil'];
 function save(){try{localStorage.setItem(key,JSON.stringify(state));}catch{$('#storage-note').textContent='Le navigateur ne permet pas de conserver la progression. Elle reste disponible pendant cette partie.';}}
 function setDragon(el,rank){const i=rank-1;el.style.backgroundPosition=`${(i%5)*25}% ${Math.floor(i/5)*50}%`;}
-function render(){const rank=rankFor(state.score);$$('[data-score]').forEach(el=>el.textContent=state.score);$$('[data-rank]').forEach(el=>el.textContent=rank);$$('[data-progress]').forEach(el=>el.style.width=`${rank===15?100:(state.score%POINTS_PER_RANK)/POINTS_PER_RANK*100}%`);$$('.dragon').forEach(el=>setDragon(el,rank));$('.rank-label').innerHTML=`${names[rank-1]} · <span data-rank>${rank}</span>/15`;$('#streak').textContent=`Série · ${streak}`;$('#difficulty').textContent=`${profile().label} · ${activeActivity==='counting'?'1 à '+profile().maxQuantity:activeActivity==='numbers'?profile().numbers+' chiffres':profile().letters+' lettres'}`;document.body.classList.toggle('reduce-motion',!state.motion);}
-function say(text,done){if(!state.sound||!('speechSynthesis'in window)){done?.();return;}speechSynthesis.cancel();const utter=new SpeechSynthesisUtterance(text);utter.lang='fr-FR';utter.rate=.82;const voice=speechSynthesis.getVoices().find(v=>v.lang.toLowerCase().startsWith('fr'));if(voice)utter.voice=voice;utter.onend=done;utter.onerror=done;speechSynthesis.speak(utter);}
+function render(){const rank=rankFor(state.score);$$('[data-score]').forEach(el=>el.textContent=state.score);$$('[data-rank]').forEach(el=>el.textContent=rank);$$('[data-progress]').forEach(el=>el.style.width=`${rank===15?100:(state.score%POINTS_PER_RANK)/POINTS_PER_RANK*100}%`);$$('.dragon').forEach(el=>setDragon(el,rank));$('.rank-label').innerHTML=`${names[rank-1]} · <span data-rank>${rank}</span>/15`;$('#streak').textContent=`Série · ${streak}`;$('#difficulty').textContent=`${profile().label} · ${activeActivity==='counting'?profile().numbers+' choix':activeActivity==='numbers'?profile().numbers+' chiffres':profile().letters+' lettres'}`;document.body.classList.toggle('reduce-motion',!state.motion);}
+function say(text,done){
+  let finished=false;const finish=()=>{if(finished)return;finished=true;done?.();};
+  if(!state.sound||!('speechSynthesis'in window)){finish();return;}
+  try{speechSynthesis.cancel();const utter=new SpeechSynthesisUtterance(text);utter.lang='fr-FR';utter.rate=.82;const voice=speechSynthesis.getVoices().find(v=>v.lang.toLowerCase().startsWith('fr'));if(voice)utter.voice=voice;utter.onend=finish;utter.onerror=finish;speechSynthesis.speak(utter);}catch{finish();}
+}
 let audio;function chime(big=false){if(!state.sound)return;try{audio??=new(window.AudioContext||window.webkitAudioContext)();audio.resume();(big?[523.25,659.25,783.99,1046.5]:[659.25,783.99]).forEach((f,i)=>{const o=audio.createOscillator(),g=audio.createGain(),t=audio.currentTime+i*.13;o.type='sine';o.frequency.value=f;g.gain.setValueAtTime(0,t);g.gain.linearRampToValueAtTime(.07,t+.015);g.gain.exponentialRampToValueAtTime(.001,t+.3);o.connect(g);g.connect(audio.destination);o.start(t);o.stop(t+.31);});}catch{}}
 function toast(text){clearTimeout(toastTimer);$('#toast').textContent=text;$('#toast').hidden=false;toastTimer=setTimeout(()=>$('#toast').hidden=true,2600);}
 function listen(){if(!current)return;$('#voice-note').classList.toggle('voice-warning',!state.sound||!('speechSynthesis'in window));if(!state.sound){$('#voice-note').textContent='La voix est désactivée dans le coin parent.';return;}if(!('speechSynthesis'in window)){$('#voice-note').textContent='La voix n’est pas disponible dans ce navigateur.';return;}say(activeActivity==='counting'?current.prompt:`Trouve ${activeActivity==='numbers'?'le chiffre':'la lettre'} ${current.target}.`);$('#voice-note').textContent='Tu peux réécouter autant que tu veux.';}
 function dots(){$('#session-dots').replaceChildren(...Array.from({length:10},(_,i)=>{const el=document.createElement('i');if(i<completed%10||(completed>0&&completed%10===0))el.className='done';return el;}));}
 function next(){
   if($('#game').hidden)return;clearQuestionTransition();$('#game').classList.remove('question-enter');void $('#game').offsetWidth;$('#game').classList.add('question-enter');locked=false;mistakes=0;
-  const numeric=activeActivity==='numbers'||activeActivity==='counting';current=activeActivity==='counting'?countingQuestion(profile().maxQuantity,current?.target):numeric?numberQuestion(profile().numbers,current?.target):question(profile().letters,current?.target);if(activeActivity==='counting')renderCounting();
+  const numeric=activeActivity==='numbers'||activeActivity==='counting';current=activeActivity==='counting'?countingQuestion(profile().numbers,current?.target):numeric?numberQuestion(profile().numbers,current?.target):question(profile().letters,current?.target);if(activeActivity==='counting')renderCounting();
   $('#choices').classList.toggle('alphabet',!numeric&&profile().letters>=13);$('#choices').classList.toggle('numberpad',numeric);
   const values=numeric?Array.from({length:activeActivity==='counting'?profile().maxQuantity:9},(_,i)=>i+1):current.choices;
   $('#choices').replaceChildren(...values.map(value=>{
@@ -50,8 +56,17 @@ function finishQuestionTransition(evolves){
   $('#question-transition').classList.add('leaving');
   turnTimer=setTimeout(()=>{clearQuestionTransition();if(evolves)showEvolution(false);else afterCelebration();},state.motion?300:0);
 }
-function showEvolution(preview){clearTimeout(turnTimer);const dialog=$('#evolution');dialog.dataset.preview=String(preview);$('#evolution-rank').textContent=`${names[rankFor(state.score)-1]} · Palier ${rankFor(state.score)}`;dialog.showModal();const dragon=dialog.querySelector('.dragon');dragon.style.animation='none';void dragon.offsetWidth;dragon.style.animation='';chime(true);say('Ta dragonne grandit ! Quelle belle aventure !');clearTimeout(evolutionTimer);evolutionTimer=setTimeout(closeEvolution,state.motion?3400:1400);}
-function closeEvolution(){clearTimeout(evolutionTimer);const dialog=$('#evolution');const preview=dialog.dataset.preview==='true';dialog.close();if(!preview&&!activePage().hidden)afterCelebration();}
+function showEvolution(preview){
+  clearTimeout(turnTimer);clearTimeout(evolutionTimer);evolutionGate?.stop();
+  const dialog=$('#evolution');dialog.dataset.preview=String(preview);$('#evolution-rank').textContent=`${names[rankFor(state.score)-1]} · Palier ${rankFor(state.score)}`;dialog.showModal();
+  const dragon=dialog.querySelector('.dragon');dragon.style.animation='none';void dragon.offsetWidth;dragon.style.animation='';chime(true);
+  const gate=createEvolutionGate({minDuration:state.motion?3400:1400,onComplete:()=>{if(evolutionGate===gate&&dialog.open)closeEvolution();}});evolutionGate=gate;
+  say('Ta dragonne grandit ! Quelle belle aventure !',()=>{if(evolutionGate!==gate||!dialog.open)return;evolutionTimer=setTimeout(()=>gate.speechFinished(),350);});
+}
+function closeEvolution(){
+  clearTimeout(evolutionTimer);evolutionGate?.stop();evolutionGate=null;const dialog=$('#evolution');if(!dialog.open)return;
+  const preview=dialog.dataset.preview==='true';if('speechSynthesis'in window)speechSynthesis.cancel();dialog.close();if(!preview&&!activePage().hidden)afterCelebration();
+}
 $('#skip-evolution').onclick=closeEvolution;$('#evolution').addEventListener('cancel',e=>{e.preventDefault();closeEvolution();});
 function startListeningActivity(kind){
   clearTimeout(turnTimer);clearTimeout(memoryTimer);clearQuestionTransition();document.body.classList.remove('memory-active');document.body.classList.toggle('numbers-active',kind==='numbers'||kind==='counting');document.body.classList.toggle('counting-active',kind==='counting');activeActivity=kind;
@@ -64,9 +79,9 @@ $('#home').onclick=()=>{document.body.classList.remove('memory-active','numbers-
 $('#listen').onclick=listen;$('#greet').onclick=()=>say('Coucou ! Je suis ta dragonne. Viens jouer avec moi !');
 $$('[data-soon]').forEach(el=>el.onclick=()=>{toast('Cette activité arrive bientôt !');say(`${el.dataset.soon} arrive bientôt. Tu peux jouer aux lettres !`);});
 $('#settings').onclick=()=>{$('#reset-confirmation').hidden=true;$('#reset-progress').hidden=false;$('#reset-result').textContent='';const a=4+Math.floor(Math.random()*5),b=3+Math.floor(Math.random()*6);challengeAnswer=a+b;$('#challenge').textContent=`${a} + ${b}`;$('#parent-gate').hidden=false;$('#parent-options').hidden=true;$('#gate-answer').value='';$('#gate-error').textContent='';$('#parent').showModal();};
-$('#gate-form').onsubmit=e=>{e.preventDefault();if(Number($('#gate-answer').value)!==challengeAnswer){$('#gate-error').textContent='Réessaie.';return;}$('#parent-gate').hidden=true;$('#parent-options').hidden=false;$('#level').value=state.difficulty;renderDifficulty();renderRanks();$('#sound').checked=state.sound;$('#motion').checked=state.motion;};
+$('#gate-form').onsubmit=e=>{e.preventDefault();if(Number($('#gate-answer').value)!==challengeAnswer){$('#gate-error').textContent='Réessaie.';return;}$('#parent-gate').hidden=true;$('#parent-options').hidden=false;$('#level').value=state.difficulty;$('#manual-points').value=state.score;$('#points-result').textContent='';previewPoints();renderDifficulty();renderRanks();$('#sound').checked=state.sound;$('#motion').checked=state.motion;};
 function renderRanks(){const rank=rankFor(state.score);$('#rank-summary').textContent=rank===15?`${state.score} étoiles · dernier palier atteint !`:`${state.score} étoiles · palier ${rank}/15 · encore ${RANK_THRESHOLDS[rank]-state.score} étoiles avant le suivant.`;$('#rank-rows').replaceChildren(...RANK_THRESHOLDS.map((points,i)=>{const row=document.createElement('tr');const level=document.createElement('th'),name=document.createElement('td'),threshold=document.createElement('td');level.textContent=String(i+1);name.textContent=names[i]+(rank===i+1?' · actuel':'');threshold.textContent=String(points);row.append(level,name,threshold);return row;}));}
-function renderDifficulty(){const p=profile();$('#difficulty-summary').textContent=`${p.letters} lettres proposées · ${p.numbers} chiffres proposés · ${p.memoryPairs} paires (${p.memoryPairs*2} cartes) · quantités de 1 à ${p.maxQuantity}.`;}
+function renderDifficulty(){const p=profile();$('#difficulty-summary').textContent=`${p.letters} lettres proposées · ${p.numbers} chiffres proposés · ${p.memoryPairs} paires (${p.memoryPairs*2} cartes) · quantités de 1 à 9 avec ${p.numbers} propositions.`;}
 $('#level').onchange=e=>{state.difficulty=e.target.value;save();render();renderDifficulty();if(!activePage().hidden){clearTimeout(turnTimer);clearQuestionTransition();if(activeActivity==='memory')startMemory();else next();}};
 $('#sound').onchange=e=>{state.sound=e.target.checked;if(!state.sound&&'speechSynthesis'in window)speechSynthesis.cancel();save();};
 $('#motion').onchange=e=>{state.motion=e.target.checked;save();render();};
@@ -125,13 +140,13 @@ window.addEventListener('resize',fitNumberScreen);window.visualViewport?.addEven
 
 $('#reset-progress').onclick=()=>{$('#reset-confirmation').hidden=false;$('#reset-progress').hidden=true;$('#reset-result').textContent='';$('#reset-cancel').focus();};
 $('#reset-cancel').onclick=()=>{$('#reset-confirmation').hidden=true;$('#reset-progress').hidden=false;$('#reset-progress').focus();};
-$('#reset-confirm').onclick=()=>{
-  clearTimeout(turnTimer);clearTimeout(memoryTimer);clearTimeout(evolutionTimer);clearQuestionTransition();if($('#evolution').open)$('#evolution').close();if('speechSynthesis'in window)speechSynthesis.cancel();
-  state.score=0;streak=0;completed=0;save();
+function applyPoints(points){
+  clearTimeout(turnTimer);clearTimeout(memoryTimer);clearTimeout(evolutionTimer);evolutionGate?.stop();evolutionGate=null;clearQuestionTransition();if($('#evolution').open)$('#evolution').close();if('speechSynthesis'in window)speechSynthesis.cancel();
+  state.score=points;streak=0;completed=0;save();
   if(!activePage().hidden){if(activeActivity==='memory')startMemory();else startListeningActivity(activeActivity);}else render();
-  renderRanks();$('#reset-confirmation').hidden=true;$('#reset-progress').hidden=false;$('#reset-result').textContent='Progression remise à zéro : 0 étoile, palier 1.';$('#reset-progress').focus();
-};
-
+  renderRanks();$('#manual-points').value=state.score;previewPoints();
+}
+$('#reset-confirm').onclick=()=>{applyPoints(0);$('#reset-confirmation').hidden=true;$('#reset-progress').hidden=false;$('#reset-result').textContent='Progression remise à zéro : 0 étoile, palier 1.';$('#points-result').textContent='';$('#reset-progress').focus();};
 function renderCounting(){
   const board=$('#count-board');board.replaceChildren();$('#choices').style.setProperty('--answer-rows',Math.ceil(profile().maxQuantity/3));
   if(current.kind==='dice'){
@@ -142,3 +157,7 @@ function renderCounting(){
     for(let i=0;i<current.target;i++){const slot=document.createElement('span');slot.className='count-item';slot.setAttribute('role','img');slot.setAttribute('aria-label',COUNT_OBJECTS[current.object].name);const sprite=document.createElementNS('http://www.w3.org/2000/svg','svg');sprite.setAttribute('class','count-sprite');sprite.setAttribute('viewBox','0 0 100 100');const clip=document.createElementNS('http://www.w3.org/2000/svg','clipPath');clip.setAttribute('id','count-crop-'+i);const rect=document.createElementNS('http://www.w3.org/2000/svg','rect');rect.setAttribute('width','100');rect.setAttribute('height','100');clip.append(rect);sprite.append(clip);sprite.setAttribute('aria-hidden','true');const art=document.createElementNS('http://www.w3.org/2000/svg','image');art.setAttribute('href','assets/objets.png');art.setAttribute('width','200');art.setAttribute('height','200');art.setAttribute('x',-(current.object%2)*100);art.setAttribute('y',-Math.floor(current.object/2)*100);art.setAttribute('clip-path','url(#count-crop-'+i+')');sprite.append(art);slot.append(sprite);objects.append(slot);}board.append(objects);
   }
 }
+
+function previewPoints(){const points=parsePoints($('#manual-points').value);$('#points-preview').textContent=points===null?'Indique un nombre entier positif ou nul.':points+' étoiles · palier '+rankFor(points)+'/15 · '+names[rankFor(points)-1];}
+$('#manual-points').oninput=previewPoints;
+$('#points-form').onsubmit=event=>{event.preventDefault();const points=parsePoints($('#manual-points').value);if(points===null){$('#points-result').textContent='Indique un nombre entier positif ou nul.';return;}applyPoints(points);$('#points-result').textContent=points+' étoiles enregistrées sur cet appareil. Palier '+rankFor(points)+'/15.';$('#reset-result').textContent='';};

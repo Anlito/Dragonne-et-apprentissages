@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import {award,rankFor,question,numberQuestion,DIFFICULTIES,difficultyFor,RANK_THRESHOLDS} from './engine.mjs';
+import {award,rankFor,question,numberQuestion,DIFFICULTIES,difficultyFor,RANK_THRESHOLDS,parsePoints} from './engine.mjs';
 for(const size of [6,13,26])for(let i=0;i<200;i++){const q=question(size,'A');assert.equal(q.choices.length,size);assert.equal(new Set(q.choices).size,size);assert(q.choices.includes(q.target));assert.notEqual(q.target,'A');}
 assert.deepEqual(Object.values(DIFFICULTIES).map(p=>p.letters),[6,13,26]);
 assert.equal(difficultyFor({size:3}),'easy');assert.equal(difficultyFor({size:26}),'hard');
@@ -17,3 +17,4 @@ assert.equal(rankFor(115),1);assert.equal(rankFor(299),1);assert.equal(rankFor(3
 console.log('Questions, récompenses et 15 paliers : vérifications réussies.');
 for(const size of [3,6,9])for(let i=0;i<200;i++){const q=numberQuestion(size,5);assert.equal(q.choices.length,size);assert.equal(new Set(q.choices).size,size);assert(q.choices.includes(q.target));assert.notEqual(q.target,5);assert(q.choices.every(n=>Number.isInteger(n)&&n>=1&&n<=9));assert.deepEqual(q.choices,[...q.choices].sort((a,b)=>a-b));}
 assert.throws(()=>numberQuestion(4),RangeError);console.log('Chiffres : 600 tirages, 3/6/9 choix et positions numériques vérifiés.');
+assert.equal(parsePoints('312'),312);assert.equal(rankFor(parsePoints('312')),2);assert.equal(parsePoints('0'),0);assert.equal(parsePoints(' 4200 '),4200);for(const value of ['', ' ', '-1','1.5','abc','Infinity','9007199254740992'])assert.equal(parsePoints(value),null);

@@ -1,7 +1,7 @@
 export const ALPHABET = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('');
 export const DIFFICULTIES = {
-  easy: {label:'Facile', letters:6, numbers:3, memoryPairs:4, maxQuantity:3},
-  medium: {label:'Moyen', letters:13, numbers:6, memoryPairs:8, maxQuantity:6},
+  easy: {label:'Facile', letters:6, numbers:3, memoryPairs:4, maxQuantity:9},
+  medium: {label:'Moyen', letters:13, numbers:6, memoryPairs:8, maxQuantity:9},
   hard: {label:'Difficile', letters:26, numbers:9, memoryPairs:16, maxQuantity:9}
 };
 export function difficultyFor(saved) {
@@ -11,6 +11,11 @@ export function difficultyFor(saved) {
 export const POINTS_PER_RANK = 300;
 export const rankFor = score => Math.min(15, Math.floor(score / POINTS_PER_RANK) + 1);
 export const RANK_THRESHOLDS = Array.from({length:15},(_,i)=>i*POINTS_PER_RANK);
+export function parsePoints(value){
+  if(typeof value!=='string'||value.trim()==='')return null;
+  const points=Number(value);
+  return Number.isSafeInteger(points)&&points>=0?points:null;
+}
 export function award(score, streak, mistakes = 0) {
   const points = mistakes===0?10:mistakes===1?5:1;
   const nextStreak = mistakes===0?streak+1:0;

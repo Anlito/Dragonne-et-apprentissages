@@ -6,9 +6,9 @@ Première version de la PWA Android « Dragonne-et-apprentissages », pensée po
 
 - Les quatre activités de l’accueil sont jouables : lettres, memory des animaux, reconnaissance des chiffres et comptage d’objets ou de points sur un dé.
 - Lettres majuscules A–Z et consigne vocale réécoutable. Le coin parent propose un niveau global : **Facile** (6 lettres), **Moyen** (13 lettres), **Difficile** (26 lettres). Facile est le réglage par défaut. Une grille compacte est utilisée à partir de 13 lettres.
-- Le même profil définit le memory avec 4 / 8 / 16 paires (8 / 16 / 32 cartes), les chiffres avec 3 / 6 / 9 choix et le comptage de 1 à 3 / 6 / 9. Le tableau du coin parent expose ces valeurs.
+- Le même profil définit le memory avec 4 / 8 / 16 paires (8 / 16 / 32 cartes), les chiffres avec 3 / 6 / 9 choix et le comptage de 1 à 9 à tous les niveaux, avec 3 / 6 / 9 réponses proposées. Le tableau du coin parent expose ces valeurs.
 - Comptage : une quantité exacte de pommes, étoiles, pierres précieuses ou fleurs en papier découpé apparaît. La voix demande combien il y en a, sans annoncer la réponse. Certaines questions présentent un dé avec 1 à 6 points ; les quantités 7 à 9 utilisent toujours des objets. Le haut-parleur répète la question. Le chiffre demandé ne se répète pas immédiatement.
-- Comptage : pavé 1–2–3 / 4–5–6 / 7–8–9 stable, avec les choix 1 à 3, 1 à 6 ou 1 à 9 selon la difficulté. Une erreur retire seulement le mauvais chiffre et invite à recompter sans révéler la quantité. Points 10 / 5 / 1, bonus, sauvegarde et transitions sont partagés avec les autres activités.
+- Comptage : pavé 1–2–3 / 4–5–6 / 7–8–9 stable, avec 3 chiffres proposés en Facile, 6 en Moyen et 9 en Difficile. Les objets vont toujours de 1 à 9 ; la bonne réponse est incluse et les autres propositions sont distinctes. Les positions non proposées restent vides. Une erreur retire seulement le mauvais chiffre et invite à recompter sans révéler la quantité. Points 10 / 5 / 1, bonus, sauvegarde et transitions sont partagés avec les autres activités.
 - Chiffres : une voix française demande un chiffre de 1 à 9. Trois, six ou neuf choix distincts sont tirés selon la difficulté. La bonne réponse fait toujours partie des choix ; le chiffre demandé ne se répète pas immédiatement. Le pavé garde la disposition 1–2–3 / 4–5–6 / 7–8–9, avec des emplacements vides pour les chiffres non proposés. Le haut-parleur permet de réécouter.
 - Chiffres : après une erreur, seul le mauvais choix disparaît sans déplacer les touches. Barème commun 10 / 5 / 1, bonus de série, étoiles sauvegardées, pause de réussite et transformations à chaque tranche de 300 points. Mise en page ajustée à la hauteur du téléphone, en portrait et paysage, avec texture de papier sur les touches.
 - Memory : 16 animaux en papier découpé, choisis et mélangés à chaque partie. Toucher deux cartes ; une mauvaise paire reste visible 1,5 seconde puis se retourne. Les paires trouvées restent visibles à leur place. Aucun chronomètre ni limite de tentatives.
@@ -23,8 +23,10 @@ Première version de la PWA Android « Dragonne-et-apprentissages », pensée po
 - Après chaque question réussie : pause de 2,2 secondes avec un petit panneau Bravo et le gain exact (bonus inclus), étoiles en papier, petit bond de la dragonne puis fondu de 0,3 seconde vers la question suivante. Les réponses sont verrouillées pendant cette pause. Le retour à l’accueil annule la transition. Le coin parent ouvert retarde la suite ; le réglage « Animations et transitions » et la préférence système de mouvement réduit désactivent les effets tout en conservant la pause.
 - Si la réponse déclenche une évolution, la pause de réussite précède la transformation spéciale du personnage.
 - Un palier par tranche de 300 étoiles, jusqu’à 15 apparences. Animation de transformation avec étoiles, carillon et nouvel équipement ; toucher pour continuer. Prévisualisation dans le coin parent.
+- La fenêtre d’évolution attend à la fois sa durée visuelle minimale (3,4 secondes, ou 1,4 seconde sans animations) et la fin réelle de la phrase, avec 0,35 seconde de respiration. Elle ne coupe plus la voix en démarrant la question suivante. Sans voix disponible ou en cas d’erreur vocale, la durée minimale suffit. Un toucher permet toujours de continuer ; les anciens événements vocaux ne peuvent pas fermer une nouvelle fenêtre.
 - Le coin parent affiche les 15 seuils cumulés (0, 300, 600… 4 200 étoiles), le palier actuel et les étoiles restantes avant l’évolution suivante. Depuis zéro, le palier 15 demande 360 réponses parfaites avec bonus, 840 questions à une faute chacune ou 4 200 à deux fautes ou plus chacune. Les seuils ont été triplés. Les étoiles acquises sont conservées ; le palier et la jauge sont recalculés selon les nouveaux seuils.
-- Progression et réglages conservés dans le stockage du navigateur sur l’appareil. Aucun compte ni transfert de progression.
+- Progression et réglages conservés dans le stockage du navigateur sur l’appareil. Aucun compte ni synchronisation automatique.
+- Transfert manuel entre appareils : dans le coin parent, « Points de départ » permet de saisir le total de l’autre téléphone. Exemple : 312 étoiles redonnent le palier 2, son apparence et 12/300 dans la jauge. Aperçu avant application et validation des entiers positifs ou nuls. La partie en cours recommence ; les réglages locaux restent conservés. Il n’y a pas de synchronisation automatique entre téléphones.
 - Mise en page portrait et paysage, téléphone et tablette. Cache hors connexion après un premier chargement réussi. Installation Android depuis le menu du navigateur.
 - Actualisation PWA : en ligne, les ressources sont récupérées sur le réseau et rafraîchissent le cache ; hors connexion, la copie enregistrée prend le relais. Le préchargement d’une nouvelle version contourne le cache HTTP pour éviter de conserver une ancienne échelle de progression.
 - Coin parent derrière un petit calcul ; il évite les ouvertures accidentelles mais ne constitue pas un contrôle de sécurité.
@@ -40,6 +42,7 @@ Application statique sans dépendance de production ni étape de compilation.
 - `engine.mjs` : tirage des lettres, points et paliers.
 - `memory.mjs` : création des grilles, retournement, comparaisons et fin de partie du memory.
 - `counting.mjs` : quantités, choix des objets, consignes et disposition exacte des points du dé.
+- `evolution.mjs` : synchronisation entre animation d’évolution et fin de la voix.
 - `assets/` : planches approuvées et icônes. Les personnages utilisent pour l’instant la planche de conception comme atlas CSS, à remplacer par des images transparentes séparées pour la finition.
 - `manifest.webmanifest`, `sw.js` : installation et cache PWA. Incrémenter la version du cache à chaque modification publiée des ressources.
 - `.github/workflows/pages.yml` : publication automatique de la branche `main` avec GitHub Pages.
@@ -50,9 +53,15 @@ Pour tester, servir ce dossier avec un serveur HTTP local ; ne pas ouvrir simple
 
 `node check.mjs` vérifie les tirages (600 questions), les bonus, les seuils et la limite des 15 paliers. `node --check app.js` et `node --check sw.js` vérifient la syntaxe.
 
+`node check-evolution.mjs` vérifie avec une horloge simulée une voix plus longue que 6,5 secondes, une voix courte, l’absence de voix, la durée visuelle minimale, la fermeture manuelle et les événements vocaux tardifs ou répétés.
+
+Transfert de points vérifié dans le navigateur, uniquement sur localhost : saisie de 312, aperçu du palier 2, application, 288 étoiles restantes avant le palier 3, puis conservation des 312 points et de l’apparence après rechargement. Les valeurs vides, négatives, décimales ou hors entier sûr sont rejetées par les tests automatiques. La difficulté et les autres réglages sont conservés.
+
+Comptage révisé : les 900 tirages couvrent toutes les quantités 1 à 9 pour chaque difficulté, avec exactement 3 / 6 / 9 réponses. Dans le navigateur, Facile a bien présenté un dé à six points avec seulement trois propositions, dont le chiffre 6.
+
 Chiffres : 600 tirages supplémentaires vérifient les trois difficultés, le nombre de choix, l’absence de doublons, la présence de la cible, les valeurs entre 1 et 9, l’ordre numérique et l’absence de répétition immédiate.
 
-`node check-counting.mjs` vérifie 900 questions avec générateur déterministe : quantités dans la difficulté, présence de la bonne réponse, choix numériques, absence de répétition immédiate, consignes sans réponse et six faces de dé avec le nombre exact de points. Tous les objets et les deux types de question sont couverts.
+`node check-counting.mjs` vérifie 900 questions avec générateur déterministe : toutes les quantités 1 à 9 dans chaque difficulté, présence de la bonne réponse, choix numériques, absence de répétition immédiate, consignes sans réponse et six faces de dé avec le nombre exact de points. Tous les objets et les deux types de question sont couverts.
 
 Vérifications navigateur du comptage : trois fleurs visibles pour une question à 3, retrait du choix 1 sans changer les objets, gain de +5 après une erreur, pause et question suivante, dé à deux points, choix 3 / 6 / 9 selon la difficulté, bonus de série, neuf pommes visibles sur écran 320 × 568, absence de défilement aussi en 360 × 640 et 844 × 390. Retour à la reconnaissance des chiffres avec le panneau d’objets bien masqué. Tous les gains de test sont limités à localhost.
 
