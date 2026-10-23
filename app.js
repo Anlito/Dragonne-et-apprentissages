@@ -18,8 +18,8 @@ function choose(letter,el){if(locked||el.disabled)return;if(letter!==current.tar
 function showEvolution(preview){clearTimeout(turnTimer);const dialog=$('#evolution');dialog.dataset.preview=String(preview);$('#evolution-rank').textContent=`${names[rankFor(state.score)-1]} · Palier ${rankFor(state.score)}`;dialog.showModal();const dragon=dialog.querySelector('.dragon');dragon.style.animation='none';void dragon.offsetWidth;dragon.style.animation='';chime(true);say('Ta dragonne grandit ! Quelle belle aventure !');clearTimeout(evolutionTimer);evolutionTimer=setTimeout(closeEvolution,state.motion?3400:1400);}
 function closeEvolution(){clearTimeout(evolutionTimer);const dialog=$('#evolution');const preview=dialog.dataset.preview==='true';dialog.close();if(!preview&&!$('#game').hidden)next();}
 $('#skip-evolution').onclick=closeEvolution;$('#evolution').addEventListener('cancel',e=>{e.preventDefault();closeEvolution();});
-$('#letters').onclick=()=>{$('#welcome').hidden=true;$('#game').hidden=false;streak=0;completed=0;render();next();};
-$('#home').onclick=()=>{clearTimeout(turnTimer);if('speechSynthesis'in window)speechSynthesis.cancel();$('#game').hidden=true;$('#welcome').hidden=false;current=null;locked=false;};
+$('#letters').onclick=()=>{$('#welcome').hidden=true;$('#game').hidden=false;window.scrollTo(0,0);streak=0;completed=0;render();next();};
+$('#home').onclick=()=>{clearTimeout(turnTimer);if('speechSynthesis'in window)speechSynthesis.cancel();$('#game').hidden=true;$('#welcome').hidden=false;window.scrollTo(0,0);current=null;locked=false;};
 $('#listen').onclick=listen;$('#greet').onclick=()=>say('Coucou ! Je suis ta dragonne. Viens jouer avec moi !');
 $$('[data-soon]').forEach(el=>el.onclick=()=>{toast('Cette activité arrive bientôt !');say(`${el.dataset.soon} arrive bientôt. Tu peux jouer aux lettres !`);});
 $('#settings').onclick=()=>{const a=4+Math.floor(Math.random()*5),b=3+Math.floor(Math.random()*6);challengeAnswer=a+b;$('#challenge').textContent=`${a} + ${b}`;$('#parent-gate').hidden=false;$('#parent-options').hidden=true;$('#gate-answer').value='';$('#gate-error').textContent='';$('#parent').showModal();};

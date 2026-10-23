@@ -31,7 +31,7 @@ Pour tester, servir ce dossier avec un serveur HTTP local ; ne pas ouvrir simple
 
 `node check.mjs` vérifie les tirages (600 questions), les bonus, les seuils et la limite des 15 paliers. `node --check app.js` et `node --check sw.js` vérifient la syntaxe.
 
-Vérifications réalisées dans le navigateur : accueil et jeu en portrait 390 × 844, accueil en paysage 844 × 390 et écran large 1280 × 720, attribution des étoiles, retrait du choix incorrect sans perte de points, conservation de la progression après rechargement, calcul d’accès au coin parent et prévisualisation de transformation. Le bon fonctionnement de la voix réelle et de l’installation doit être confirmé sur le téléphone Android cible.
+Vérifications réalisées dans le navigateur : accueil et jeu en portrait 390 × 844 et paysage 844 × 390, accueil sur écran large 1280 × 720, attribution des étoiles, retrait du choix incorrect sans perte de points, conservation de la progression après rechargement, calcul d’accès au coin parent et prévisualisation de transformation. Les changements d’écran reviennent en haut de page. Le bon fonctionnement de la voix réelle et de l’installation doit être confirmé sur le téléphone Android cible.
 
 Dépôt : https://github.com/Anlito/Dragonne-et-apprentissages. Hébergement prévu : https://anlito.github.io/Dragonne-et-apprentissages/. GitHub Pages est configuré pour GitHub Actions ; chaque envoi sur `main` lance le déploiement. Ce dossier est le dépôt local de référence de cette première version.
 
