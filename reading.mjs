@@ -1,3 +1,4 @@
+import {numberWordsQuestion} from './number-words.mjs';
 // Contenu des activités de lecture. Les groupes reprennent la feuille fournie,
 // avec des exemples et une prononciation contextualisée plutôt qu'une API lue par la voix.
 export const SOUND_GROUPS=[
@@ -63,8 +64,9 @@ const PART_ROWS=[
  ['hélicoptère',['hé','li','co','ptère'],3],['ordinateur',['or','di','na','teur'],3]
 ];
 export const PART_WORDS=PART_ROWS.map(([word,parts,level])=>({word,parts,level}));
-export const READING_IDS=['sounds','complete','graphemes','word-listen','link-words','build-word'];
+export const READING_IDS=['sounds','complete','graphemes','word-listen','link-words','build-word','number-words'];
 export const READING_META={
+ 'number-words':{label:'Chiffres et lettres',title:'Quel est ce nombre ?',instruction:'Lis le nombre écrit en lettres et retrouve-le parmi les chiffres.'},
  sounds:{label:'Les sons',title:'Écoute le son',instruction:'Écoute, puis touche le groupe de lettres.'},
  complete:{label:'J’écoute et je complète',title:'Écoute et complète',instruction:'Écoute le mot. Choisis la partie manquante.'},
  graphemes:{label:'Les morceaux du mot',title:'Complète le mot',instruction:'Complète le mot. Tu peux l’écouter avec le haut-parleur.'},
@@ -79,6 +81,7 @@ function wordSimilarity(a,b){let score=0;for(let i=1;i<=Math.min(a.length,b.leng
 const options=(target,pool,count,random)=>shuffle([target,...shuffle([...new Set(pool)].filter(x=>x!==target),random).slice(0,count-1)],random);
 export function readingQuestion(kind,difficulty='easy',previous=null,random=Math.random){
  if(!READING_IDS.includes(kind))throw new RangeError('Activité inconnue');
+ if(kind==='number-words')return numberWordsQuestion(difficulty,previous,random);
  const count=readingChoices(difficulty),maxLevel=difficulty==='easy'?1:2;
  if(kind==='sounds'){
    const groups=SOUND_GROUPS.filter(g=>g.level<=maxLevel),group=pick(groups,previous,random);

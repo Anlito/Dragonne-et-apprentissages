@@ -37,4 +37,4 @@ for(const kind of READING_IDS)for(const difficulty of ['easy','medium','hard']){
 }
 for(const group of SOUND_GROUPS)for(const form of group.forms)assert.ok(seen.has(form),'Graphème couvert : '+form);
 assert.throws(()=>readingQuestion('inconnu'),RangeError);
-console.log('Lecture : 4 320 tours, six jeux, trois difficultés, graphèmes, assemblages, erreurs et associations vérifiés.');
+console.log('Lecture : 5 040 tours, sept jeux, trois difficultés, graphèmes, assemblages, erreurs et associations vérifiés.');

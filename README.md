@@ -4,7 +4,7 @@ Première version de la PWA Android « Dragonne-et-apprentissages », pensée po
 
 ## Fonctionnement
 
-- Les douze activités de l’accueil sont jouables : quatre jeux initiaux, six jeux de lecture et deux jeux de mathématiques, tous activables par profil dans le coin parent.
+- Les quatorze activités de l’accueil sont jouables : quatre jeux initiaux, sept jeux de lecture, deux jeux de mathématiques et la fluence, tous activables par profil dans le coin parent.
 - Lettres majuscules A–Z et consigne vocale réécoutable. Le coin parent propose un niveau global : **Facile** (6 lettres), **Moyen** (13 lettres), **Difficile** (26 lettres). Facile est le réglage par défaut. Une grille compacte est utilisée à partir de 13 lettres.
 - Le même profil définit le memory avec 4 / 8 / 16 paires (8 / 16 / 32 cartes), les chiffres avec 3 / 6 / 9 choix et le comptage de 1 à 9 à tous les niveaux, avec 3 / 6 / 9 réponses proposées. Le tableau du coin parent expose ces valeurs.
 - Comptage : une quantité exacte de pommes, étoiles, pierres précieuses ou fleurs en papier découpé apparaît. La voix demande combien il y en a, sans annoncer la réponse. Certaines questions présentent un dé avec 1 à 6 points ; les quantités 7 à 9 utilisent toujours des objets. Le haut-parleur répète la question. Le chiffre demandé ne se répète pas immédiatement.
@@ -192,3 +192,18 @@ Au lancement, choix d’une table de 1 à 10. Facile : multiplicateurs 1–5 et 
 Tests : 4 020 calculs couvrant les trois modes et niveaux, limites et intermédiaires non négatifs, présence et unicité de la bonne réponse, dix tables et multiplicateur différent du précédent. Test du gestionnaire de récompense réel et tests de sauvegarde des difficultés distinctes entre enfants. Les suites de lecture, profils, progression et évolution continuent de passer.
 
 Navigateur, seulement sur localhost : une lecture validée fait passer 612 à 622 points et la question change ; 9−1+3 donne 11 (+10), 8−?+3=7 accepte 4 (+10), jauge 2−1+12 : erreur à 0 puis 13 (+5), table de 7 choisie et 7×2=14 (+10). Après rechargement, lecture en Facile et multiplication en Difficile restent distinctes pour le même enfant. Six réponses de multiplication tiennent sans défilement en 320×568 et en paysage ; réglage de la jauge au clavier vérifié. Les données publiques restent intactes.
+
+## Fluence et chiffres en lettres
+
+Deux nouvelles activités, activables par enfant dans le coin parent. Cache PWA v23.
+
+**Fluence** : le bouton lance une minute réelle. À zéro, l’enfant sélectionne son dernier mot puis confirme. Le dernier essai et le meilleur mot sont sauvegardés pour chaque enfant et chaque texte ; le mot record porte un drapeau doré lors des essais suivants. Chaque essai repart du début. Le texte fourni « Les enfants s’amusent dans la cour de l’école… » est installé par défaut (69 mots). Dans le coin parent, le texte est modifiable pour l’enfant sélectionné ; revenir à un ancien texte retrouve son record. Les espaces et variantes d’apostrophe ne créent pas un nouveau record. Apostrophes et traits d’union restent dans un seul mot.
+
+Une minute validée apporte 10 points et participe au bonus habituel ; aucun point par mot. Le résultat est déclaré par l’enfant, sans enregistrement ni analyse de sa lecture. Quitter l’activité annule la minute en cours. Le chrono utilise une échéance absolue pour éviter qu’un onglet ralenti prolonge la minute. Les records restent enregistrés quand les points sont modifiés dans le coin parent. La sauvegarde reste locale à l’appareil.
+
+**Chiffres et lettres** : lire une écriture comme « vingt-et-un » et sélectionner 21. Facile : 0–9 avec trois choix ; Moyen : 0–20 avec quatre choix ; Difficile : 0–100 avec six choix. Réglage propre à l’activité, erreurs avec retrait des choix, points 10/5/1 et passage automatique à la suite. La voix lit uniquement la consigne pour laisser travailler la lecture du nombre.
+
+Fichiers : `fluency.mjs` (texte initial, segmentation, records et horloge), `number-words.mjs` (orthographe et questions), `profiles.mjs` (sauvegarde par enfant), `app.js` et `index.html` (interfaces). `assets/fluence-nombres.png` : atlas créé avec l’outil d’image intégré, style papier découpé crème/sauge/lavande/or ; livre ouvert, chronomètre et marque-page pour la fluence, carte « trois » reliée au chiffre 3 pour les nombres.
+
+Vérifications : horloge à échéance, arrêt et callback tardif, décompte des mots, meilleur et dernier essai distincts, conservation par texte, restauration et indépendance ; 1 500 questions de nombres sur les trois niveaux, orthographe des nombres composés et absence de choix doubles. Toutes les suites de progression, profils, lecture, maths et récompenses passent.
+Navigateur localhost : minute complète chronométrée, choix du mot 10, validation +10 points, record retrouvé après rechargement ; texte parent modifié puis texte initial restauré avec son record conservé. Vue 360×640 vérifiée. « vingt » associé à 20 : +10 points et question suivante. Aucun profil public modifié.

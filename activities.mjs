@@ -9,7 +9,9 @@ export const ACTIVITIES=[
     ['word-listen','J’écoute un mot'],['link-words','Je relie'],['build-word','Le mot en morceaux']
   ].map(([id,label],readingTile)=>({id,button:id+'-start',label,readingTile})),
   {id:'arithmetic',button:'arithmetic-start',label:'Les calculs + et −',mathTile:0},
-  {id:'multiply',button:'multiply-start',label:'Les multiplications',mathTile:1}
+  {id:'multiply',button:'multiply-start',label:'Les multiplications',mathTile:1},
+  {id:'fluency',button:'fluency-start',label:'Fluence · 1 minute',studyTile:0},
+  {id:'number-words',button:'number-words-start',label:'Chiffres et lettres',studyTile:1}
 ];
 export function cleanActivities(saved){
   return Object.fromEntries(ACTIVITIES.map(({id})=>[id,saved?.[id]!==false]));

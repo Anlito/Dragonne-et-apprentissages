@@ -1,3 +1,4 @@
+import {DEFAULT_FLUENCY_TEXT,fluencyTokens,fluencyWordCount,fluencyRecord,recordFluencyAttempt,normalizeFluencyText,createFluencyClock} from './fluency.mjs';
 import {MATH_IDS,MATH_LEVELS,arithmeticQuestion,multiplicationQuestion} from './maths.mjs';
 import {READING_IDS,READING_META,readingChoices,readingQuestion,selectPiece,matchWord} from './reading.mjs';
 import {ACTIVITIES} from './activities.mjs';
@@ -20,7 +21,8 @@ let activeActivity='letters', memoryBoard=null, memoryTimer, memoryStartScore=0,
 let selectedTable=null,mathRound=0;
 const isMath=()=>MATH_IDS.includes(activeActivity);
 const isReading=()=>READING_IDS.includes(activeActivity);
-const activePage=()=>activeActivity==='memory'?$('#memory'):$('#game');
+let fluencyClock=null,fluencyAttempt=null;
+const activePage=()=>activeActivity==='fluency'?$('#fluence'):activeActivity==='memory'?$('#memory'):$('#game');
 let evolutionGate=null;
 let streak=0, completed=0, current=null, mistakes=0, locked=false, turnTimer, evolutionTimer, toastTimer, challengeAnswer, deferredInstall;
 function save(){if(!activeId||!Object.hasOwn(accounts.profiles,activeId))return;try{accounts.activeId=activeId;accounts.profiles[activeId]=state;localStorage.setItem(PROFILES_KEY,JSON.stringify(accounts));renderProfileChoices();}catch{$('#storage-note').textContent='Le navigateur ne permet pas de conserver la progression. Elle reste disponible pendant cette partie.';}}
@@ -50,7 +52,7 @@ function next(){
   $('#feedback').textContent='Prends ton temps, tu peux réécouter.';dots();listen();
 }
 function choose(letter,el){if(locked||el.disabled)return;if(letter!==current.target){mistakes++;streak=0;el.classList.add('removed');el.disabled=true;el.setAttribute('aria-hidden','true');$('#feedback').textContent='Un choix en moins. Essaie encore !';say(activeActivity==='counting'?'Compte encore, puis choisis la bonne réponse.':`Essaie encore. Trouve ${activeActivity==='numbers'?'le chiffre':'la lettre'} ${current.target}.`);render();return;}locked=true;el.classList.add('correct');const oldRank=rankFor(state.score),result=award(state.score,streak,mistakes);state.score=result.score;streak=result.streak;completed++;save();render();dots();$('#feedback').textContent=`Bravo ! +${result.points} ${result.points===1?'étoile':'étoiles'}${result.bonus?' et +5 de bonus':''} !`;chime();say(result.bonus?'Bravo ! Tu gagnes un bonus !':'Bravo, tu as trouvé !');celebrateQuestion(result,rankFor(state.score)>oldRank);}
-function clearQuestionTransition(){
+function clearQuestionTransition(){$('#fluence').classList.remove('celebrating');
   $('#question-transition').hidden=true;
   $('#question-transition').classList.remove('leaving');
   $('#game').classList.remove('celebrating');$('#memory').classList.remove('celebrating');
@@ -83,21 +85,22 @@ function closeEvolution(){
 }
 $('#skip-evolution').onclick=closeEvolution;$('#evolution').addEventListener('cancel',e=>{e.preventDefault();closeEvolution();});
 function startListeningActivity(kind){
+  if(kind==='fluency'){startFluency();return;}
   if(MATH_IDS.includes(kind)){startMath(kind);return;}if(READING_IDS.includes(kind)){startReading(kind);return;}
   if(!state.activities[kind])return;
-  clearTimeout(turnTimer);clearTimeout(memoryTimer);clearQuestionTransition();document.body.classList.remove('memory-active','reading-active','math-active');$('#reading-board').hidden=true;$('#choices').className='choices';$('#choices').hidden=false;document.body.classList.toggle('numbers-active',kind==='numbers'||kind==='counting');document.body.classList.toggle('counting-active',kind==='counting');activeActivity=kind;
+  clearTimeout(turnTimer);clearTimeout(memoryTimer);clearQuestionTransition();document.body.classList.remove('memory-active','reading-active','math-active','fluency-active');$('#reading-board').hidden=true;$('#choices').className='choices';$('#choices').hidden=false;document.body.classList.toggle('numbers-active',kind==='numbers'||kind==='counting');document.body.classList.toggle('counting-active',kind==='counting');activeActivity=kind;
   $('#memory').hidden=true;$('#welcome').hidden=true;$('#game').hidden=false;window.scrollTo(0,0);streak=0;completed=0;current=null;
   $('#count-board').hidden=kind!=='counting';$('.question h1').textContent=kind==='counting'?'Combien y en a ?':'Écoute et retrouve';$('#activity-label').textContent=kind==='counting'?'JE COMPTE':kind==='numbers'?'LES CHIFFRES':'LES LETTRES';$('#listen').setAttribute('aria-label',kind==='counting'?'Réécouter la question':kind==='numbers'?'Réécouter le chiffre':'Réécouter la lettre');$('#choices').setAttribute('aria-label',kind==='letters'?'Choisis la lettre':'Choisis le chiffre');
   render();next();fitNumberScreen();
 }
 $('#letters').onclick=()=>startListeningActivity('letters');$('#numbers-start').onclick=()=>startListeningActivity('numbers');$('#counting-start').onclick=()=>startListeningActivity('counting');
-function returnHome(){clearTimeout(evolutionTimer);evolutionGate?.stop();evolutionGate=null;if($('#evolution').open)$('#evolution').close();document.body.classList.remove('memory-active','numbers-active','counting-active','reading-active','math-active');clearTimeout(turnTimer);clearTimeout(memoryTimer);$('#memory').hidden=true;clearQuestionTransition();if('speechSynthesis'in window)speechSynthesis.cancel();$('#game').hidden=true;$('#welcome').hidden=false;window.scrollTo(0,0);current=null;locked=false;streak=0;completed=0;afterCelebration=null;render();}
+function returnHome(){stopFluency();$('#fluence').hidden=true;clearTimeout(evolutionTimer);evolutionGate?.stop();evolutionGate=null;if($('#evolution').open)$('#evolution').close();document.body.classList.remove('memory-active','numbers-active','counting-active','reading-active','math-active','fluency-active');clearTimeout(turnTimer);clearTimeout(memoryTimer);$('#memory').hidden=true;clearQuestionTransition();if('speechSynthesis'in window)speechSynthesis.cancel();$('#game').hidden=true;$('#welcome').hidden=false;window.scrollTo(0,0);current=null;locked=false;streak=0;completed=0;afterCelebration=null;render();}
 $('#home').onclick=returnHome;
 $('#listen').onclick=listen;$('#greet').onclick=openCompanion;
 $$('[data-soon]').forEach(el=>el.onclick=()=>{toast('Cette activité arrive bientôt !');say(`${el.dataset.soon} arrive bientôt. Tu peux jouer aux lettres !`);});
 $('#settings').onclick=()=>{$('#reset-confirmation').hidden=true;$('#reset-progress').hidden=false;$('#reset-result').textContent='';const a=4+Math.floor(Math.random()*5),b=3+Math.floor(Math.random()*6);challengeAnswer=a+b;$('#challenge').textContent=`${a} + ${b}`;$('#parent-gate').hidden=false;$('#parent-options').hidden=true;$('#gate-answer').value='';$('#gate-error').textContent='';$('#parent').showModal();};
 $('#gate-form').onsubmit=e=>{e.preventDefault();if(Number($('#gate-answer').value)!==challengeAnswer){$('#gate-error').textContent='Réessaie.';return;}$('#parent-gate').hidden=true;$('#parent-options').hidden=false;renderParentSettings();};
-function renderParentSettings(){renderChildSelect();renderActivitySettings();$('#reset-confirmation').hidden=true;$('#reset-progress').hidden=false;$('#reset-result').textContent='';$('#parent-profile').value=activeId;$('#parent-profile-note').textContent='Réglages et progression de '+childLabel()+' uniquement.';$('#level').value=state.difficulty;$('#manual-points').value=state.score;$('#points-result').textContent='';previewPoints();renderDifficulty();renderRanks();$('#sound').checked=state.sound;$('#motion').checked=state.motion;}
+function renderParentSettings(){renderFluencyParent();renderChildSelect();renderActivitySettings();$('#reset-confirmation').hidden=true;$('#reset-progress').hidden=false;$('#reset-result').textContent='';$('#parent-profile').value=activeId;$('#parent-profile-note').textContent='Réglages et progression de '+childLabel()+' uniquement.';$('#level').value=state.difficulty;$('#manual-points').value=state.score;$('#points-result').textContent='';previewPoints();renderDifficulty();renderRanks();$('#sound').checked=state.sound;$('#motion').checked=state.motion;}
 function renderRanks(){const rank=rankFor(state.score);$('#rank-summary').textContent=rank===15?`${state.score} étoiles · dernier palier atteint !`:`${state.score} étoiles · palier ${rank}/15 · encore ${RANK_THRESHOLDS[rank]-state.score} étoiles avant le suivant.`;$('#rank-rows').replaceChildren(...RANK_THRESHOLDS.map((points,i)=>{const row=document.createElement('tr');const level=document.createElement('th'),name=document.createElement('td'),threshold=document.createElement('td');level.textContent=String(i+1);name.textContent=rankNames()[i]+(rank===i+1?' · actuel':'');threshold.textContent=String(points);row.append(level,name,threshold);return row;}));}
 function renderDifficulty(){const p=DIFFICULTIES[state.difficulty];$('#difficulty-summary').textContent=`${p.letters} lettres proposées · ${p.numbers} réponses en nombres (${state.difficulty==='easy'?'doigts':state.difficulty==='medium'?'doigts et chiffres':'chiffres'}) · ${p.memoryPairs} paires (${p.memoryPairs*2} cartes) · lecture : ${readingChoices(state.difficulty)} choix · quantités de 1 à 9 avec ${p.numbers} propositions.`;}
 $('#level').onchange=e=>{state.difficulty=e.target.value;save();render();renderDifficulty();renderActivitySettings();if(!activePage().hidden){clearTimeout(turnTimer);clearQuestionTransition();if(activeActivity==='memory')startMemory();else next();}};
@@ -112,7 +115,7 @@ render();
 function startMemory(){
   if(!state.activities.memory)return;
   clearTimeout(memoryTimer);clearTimeout(turnTimer);clearQuestionTransition();
-  activeActivity='memory';document.body.classList.remove('numbers-active','counting-active','reading-active','math-active');document.body.classList.add('memory-active');$('#welcome').hidden=true;$('#game').hidden=true;$('#memory').hidden=false;$('#memory-finish').hidden=true;
+  activeActivity='memory';document.body.classList.remove('numbers-active','counting-active','reading-active','math-active','fluency-active');document.body.classList.add('memory-active');$('#welcome').hidden=true;$('#game').hidden=true;$('#memory').hidden=false;$('#memory-finish').hidden=true;
   streak=0;memoryStartScore=state.score;memoryBoard=createMemory(profile().memoryPairs);window.scrollTo(0,0);
   const board=$('#memory-board');board.dataset.pairs=memoryBoard.pairs;
   board.replaceChildren(...memoryBoard.cards.map((card,index)=>{
@@ -241,7 +244,7 @@ function renderActivities(){
 function renderActivitySettings(){
  $('#activity-settings').replaceChildren(...ACTIVITIES.map(activity=>{
   const row=document.createElement('div');row.className='activity-setting';const label=document.createElement('label');label.className='activity-setting-top';
-  const art=document.createElement('span');art.className=activity.mathTile!==undefined?'tile math-tile math-tile-'+activity.mathTile:activity.readingTile===undefined?'tile tile-'+activity.tile:'tile reading-tile reading-tile-'+activity.readingTile;art.setAttribute('aria-hidden','true');
+  const art=document.createElement('span');art.className=activity.studyTile!==undefined?'tile study-tile study-tile-'+activity.studyTile:activity.mathTile!==undefined?'tile math-tile math-tile-'+activity.mathTile:activity.readingTile===undefined?'tile tile-'+activity.tile:'tile reading-tile reading-tile-'+activity.readingTile;art.setAttribute('aria-hidden','true');
   const text=document.createElement('span');text.textContent=activity.label;
   const input=document.createElement('input');input.type='checkbox';input.checked=state.activities[activity.id];input.setAttribute('aria-label','Afficher '+activity.label);
   input.onchange=()=>{state.activities[activity.id]=input.checked;save();if(!input.checked&&activeActivity===activity.id&&!activePage().hidden)returnHome();else renderActivities();$('#activity-settings-status').textContent=(input.checked?'Activité affichée':'Activité masquée')+' pour '+childLabel()+'.';};
@@ -260,12 +263,12 @@ for(const id of READING_IDS)$('#'+id+'-start').onclick=()=>startReading(id);
 function startReading(kind){
  if(!state.activities[kind])return;
  clearTimeout(turnTimer);clearTimeout(memoryTimer);clearQuestionTransition();
- document.body.classList.remove('memory-active','numbers-active','counting-active','math-active');document.body.classList.add('reading-active');
+ stopFluency();$('#fluence').hidden=true;document.body.classList.remove('memory-active','numbers-active','counting-active','math-active','fluency-active');document.body.classList.add('reading-active');
  activeActivity=kind;$('#game').dataset.reading=kind;current=null;streak=0;completed=0;locked=false;
  $('#welcome').hidden=true;$('#memory').hidden=true;$('#game').hidden=false;$('#count-board').hidden=true;
  $('#reading-board').hidden=false;$('#choices').className='choices reading-choices';
  $('.question h1').textContent=READING_META[kind].title;$('#activity-label').textContent=READING_META[kind].label.toUpperCase();
- $('#listen').setAttribute('aria-label',kind==='sounds'?'Réécouter le son':kind==='link-words'?'Réécouter la consigne':'Écouter le mot');
+ $('#listen').setAttribute('aria-label',kind==='number-words'?'Écouter la consigne':kind==='sounds'?'Réécouter le son':kind==='link-words'?'Réécouter la consigne':'Écouter le mot');
  $('#choices').setAttribute('aria-label',kind==='sounds'?'Choisis le son':kind==='build-word'?'Choisis les morceaux dans l’ordre':'Choisis la bonne écriture');
  window.scrollTo(0,0);render();nextReading();
 }
@@ -280,6 +283,7 @@ function renderReading(){
  const board=$('#reading-board'),choices=$('#choices');board.replaceChildren();choices.replaceChildren();
  board.hidden=!current.display;choices.hidden=current.display==='match';choices.dataset.count=current.choices.length;choices.style.setProperty('--reading-rows',Math.ceil(current.choices.length/3));
  if(current.display==='match'){renderWordLinks();return;}
+ if(current.display==='number-word'){const word=document.createElement('div');word.className='number-word-card';word.textContent=current.label;board.append(word);}
  if(current.display==='gap'){
   const word=document.createElement('div');word.className='word-gap';word.setAttribute('aria-label','Mot à compléter');
   const before=document.createElement('span'),gap=document.createElement('span'),after=document.createElement('span');
@@ -359,7 +363,7 @@ for(const kind of MATH_IDS)$('#'+kind+'-start').onclick=()=>startMath(kind);
 function startMath(kind){
  if(!state.activities[kind])return;
  clearTimeout(turnTimer);clearTimeout(memoryTimer);clearQuestionTransition();
- document.body.classList.remove('memory-active','numbers-active','counting-active');document.body.classList.add('reading-active','math-active');
+ stopFluency();$('#fluence').hidden=true;document.body.classList.remove('memory-active','numbers-active','counting-active','fluency-active');document.body.classList.add('reading-active','math-active');
  activeActivity=kind;current=null;streak=0;completed=0;locked=false;mathRound=0;selectedTable=null;
  $('#welcome').hidden=true;$('#memory').hidden=true;$('#game').hidden=false;$('#count-board').hidden=true;$('#game').dataset.reading=kind;
  $('#choices').className='choices reading-choices math-choices';$('#listen').setAttribute('aria-label','Réécouter le calcul');$('#choices').setAttribute('aria-label','Choisis la réponse du calcul');
@@ -407,3 +411,57 @@ function chooseMath(value,button){
  }
  $('.equation').setAttribute('aria-label',current.equation.replace('?',String(value)));$('.math-blank').textContent=value;$('.math-blank').classList.add('filled');if(current.mode!=='line')button.classList.add('correct');finishReading(nextMath);
 }
+
+// Fluence : minute réelle, sélection explicite du dernier mot, record par texte/enfant.
+$('#fluency-start').onclick=startFluency;
+function stopFluency(){fluencyClock?.stop();fluencyClock=null;fluencyAttempt=null;}
+function startFluency(){
+ if(!state.activities.fluency)return;
+ clearTimeout(turnTimer);clearTimeout(memoryTimer);stopFluency();clearQuestionTransition();
+ activeActivity='fluency';current=null;locked=false;streak=0;completed=0;mistakes=0;
+ document.body.classList.remove('memory-active','numbers-active','counting-active','reading-active','math-active');document.body.classList.add('fluency-active');
+ $('#welcome').hidden=true;$('#game').hidden=true;$('#memory').hidden=true;$('#fluence').hidden=false;
+ fluencyAttempt={text:state.fluency.text,phase:'ready',selected:null,seconds:60,outcome:null};render();renderFluency();window.scrollTo(0,0);
+ say('Lis pendant une minute. Quand le chrono sera terminé, touche le dernier mot que tu as lu, puis valide ta lecture. Le drapeau montre ton record.');
+}
+function renderFluency(){
+ if(!fluencyAttempt)return;const attempt=fluencyAttempt,record=fluencyRecord(state.fluency,attempt.text),count=fluencyWordCount(attempt.text),choosing=attempt.phase==='choose';
+ $('#fluence-timer').textContent=Math.floor(attempt.seconds/60)+':'+String(attempt.seconds%60).padStart(2,'0');
+ $('#fluence-timer').classList.toggle('timer-ended',attempt.seconds===0);$('#fluence-best').textContent=record.best?'⚑ Record : '+record.best+' mots':'⚑ Ton premier record';
+ $('#fluence-history').textContent=record.attempts?'Dernier essai : '+record.last+' mots · '+(record.best<count?'Objectif : atteindre le mot '+(record.best+1)+' !':'Tu as déjà atteint la fin du texte !'):'Le drapeau indiquera ton meilleur mot après ton premier essai.';
+ $('#fluence-run').disabled=!['ready','result'].includes(attempt.phase);$('#fluence-run').textContent=attempt.phase==='reading'?'Lecture en cours…':attempt.phase==='choose'||attempt.phase==='reward'?'Minute terminée':attempt.phase==='result'?'↻ Réessayer pendant 1 minute':'▶ Lire pendant 1 minute';
+ $('#fluence-instruction').textContent=attempt.phase==='ready'?'Commence au début du texte. Appuie quand tu es prêt.':attempt.phase==='reading'?'À toi de lire ! Le chrono dure une minute.':choosing?'Touche le dernier mot lu, puis valide ta lecture.':attempt.phase==='reward'?'Lecture enregistrée !':'Tu peux recommencer depuis le début pour dépasser ton record.';
+ $('#fluence-result').textContent=choosing&&attempt.selected!==null?attempt.selected+' mots atteints. Tu peux encore changer le mot sélectionné.':attempt.phase==='result'?(attempt.outcome?.newRecord?'Nouveau record ! ':'')+(attempt.outcome?.last??0)+' mots atteints · record : '+record.best+' mots.':'';
+ const text=$('#fluence-text');text.replaceChildren(...fluencyTokens(attempt.text).map(token=>{
+  if(!token.index)return document.createTextNode(token.text);
+  const word=document.createElement('button');word.type='button';word.className='fluence-word';word.textContent=token.text;word.dataset.word=token.index;word.disabled=!choosing;word.setAttribute('aria-label','Mot '+token.index+' : '+token.text);word.setAttribute('aria-pressed',String(attempt.selected===token.index));
+  word.classList.toggle('best-word',record.best>0&&record.best===token.index);word.classList.toggle('last-word',record.last>0&&record.last===token.index);word.classList.toggle('selected-word',attempt.selected===token.index);
+  if(record.best===token.index&&record.best>0)word.title='Ton record : '+record.best+' mots';
+  word.onclick=()=>{if(fluencyAttempt!==attempt||attempt.phase!=='choose')return;attempt.selected=token.index;renderFluency();};return word;
+ }));
+ $('#fluence-none').hidden=!choosing;$('#fluence-confirm').hidden=!choosing;$('#fluence-confirm').disabled=attempt.selected===null;$('#fluence-none').classList.toggle('selected',attempt.selected===0);
+}
+$('#fluence-run').onclick=()=>{
+ const attempt=fluencyAttempt;if(!attempt||!['ready','result'].includes(attempt.phase))return;
+ attempt.phase='reading';attempt.selected=null;attempt.seconds=60;attempt.outcome=null;locked=false;mistakes=0;renderFluency();if('speechSynthesis'in window)speechSynthesis.cancel();
+ $('#fluence-text').scrollIntoView({block:'start',behavior:'auto'});
+ fluencyClock?.stop();fluencyClock=createFluencyClock({
+  onTick:seconds=>{if(fluencyAttempt!==attempt||attempt.phase!=='reading')return;attempt.seconds=seconds;$('#fluence-timer').textContent=Math.floor(seconds/60)+':'+String(seconds%60).padStart(2,'0');$('#fluence-timer').setAttribute('aria-label','Temps restant : '+seconds+' secondes');},
+  onEnd:()=>{if(fluencyAttempt!==attempt||activeActivity!=='fluency')return;attempt.phase='choose';attempt.seconds=0;renderFluency();chime();say('La minute est terminée. Touche le dernier mot que tu as lu, puis valide ta lecture.');}
+ });fluencyClock.start();
+};
+$('#fluence-help').onclick=()=>{if(fluencyAttempt?.phase==='reading'){say('Continue à lire jusqu’à la fin du chrono.');return;}say('Lis pendant une minute. À la fin, touche le dernier mot lu et valide. Le mot doré avec le drapeau est ton record. Chaque nouvel essai repart du début.');};
+$('#fluence-none').onclick=()=>{if(fluencyAttempt?.phase!=='choose')return;fluencyAttempt.selected=0;renderFluency();};
+$('#fluence-confirm').onclick=()=>{
+ const attempt=fluencyAttempt;if(!attempt||attempt.phase!=='choose'||attempt.selected===null||locked)return;
+ attempt.outcome=recordFluencyAttempt(state.fluency,attempt.text,attempt.selected);attempt.phase='reward';renderFluency();finishReading(()=>{if(fluencyAttempt!==attempt)return;attempt.phase='result';renderFluency();});
+};
+document.addEventListener('visibilitychange',()=>{if(!document.hidden)fluencyClock?.refresh();});
+function renderFluencyParent(){$('#fluence-parent-text').value=state.fluency.text;updateFluencyCount();$('#fluence-text-result').textContent='';}
+function updateFluencyCount(){$('#fluence-parent-count').textContent=fluencyWordCount($('#fluence-parent-text').value)+' mots · durée fixe : 1 minute';}
+$('#fluence-parent-text').oninput=updateFluencyCount;
+$('#fluence-restore-default').onclick=()=>{$('#fluence-parent-text').value=DEFAULT_FLUENCY_TEXT;updateFluencyCount();$('#fluence-text-result').textContent='Texte proposé chargé. Appuie sur Enregistrer le texte pour l’appliquer.';};
+$('#fluence-text-form').onsubmit=event=>{
+ event.preventDefault();const text=normalizeFluencyText($('#fluence-parent-text').value);if(!fluencyWordCount(text)){$('#fluence-text-result').textContent='Écris un texte avec au moins un mot.';return;}
+ state.fluency.text=text;save();if(activeActivity==='fluency'&&!$('#fluence').hidden)startFluency();$('#fluence-text-result').textContent='Texte enregistré pour '+childLabel()+'. Ses records sont conservés pour chaque texte.';
+};
