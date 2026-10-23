@@ -9,8 +9,10 @@ Première version de la PWA Android « Dragonne-et-apprentissages », pensée po
 - Le même profil définit les futures activités : chiffres avec 3 / 6 / 9 choix, memory avec 4 / 8 / 16 paires (8 / 16 / 32 cartes), quantités de 1 à 3 / 6 / 9. Le tableau du coin parent expose ces valeurs. Ces trois activités restent à venir.
 - Les anciens réglages sont migrés sans perdre les étoiles : 3 ou 6 lettres deviennent Facile ; l’alphabet complet devient Difficile. Le niveau global est sauvegardé sur l’appareil et appliqué immédiatement à la partie en cours.
 - Erreurs sans retrait de points. Chaque erreur retire le choix incorrect ; les autres lettres restent à leur place pour conserver les repères visuels. La bonne réponse reste toujours disponible. Les choix reviennent à la question suivante. Ce principe sera repris pour les chiffres.
-- 10 étoiles par bonne réponse et 5 étoiles bonus toutes les trois bonnes réponses consécutives. Une erreur remet uniquement la série à zéro.
+- Récompense selon les erreurs de la question : 10 étoiles sans faute, 5 après une faute, 1 après deux fautes ou plus. Les points déjà acquis ne sont jamais retirés. Le compteur d’erreurs revient à zéro à chaque question.
+- Bonus de 5 étoiles toutes les trois réponses consécutives sans faute. Une faute remet la série à zéro ; une réponse trouvée avec aide ne démarre pas une série.
 - Un palier par tranche de 100 étoiles, jusqu’à 15 apparences. Animation de transformation avec étoiles, carillon et nouvel équipement ; toucher pour continuer. Prévisualisation dans le coin parent.
+- Le coin parent affiche les 15 seuils cumulés (0, 100, 200… 1 400 étoiles), le palier actuel et les étoiles restantes avant l’évolution suivante. Depuis zéro, le palier 15 demande 120 réponses parfaites avec bonus, 280 questions à une faute chacune ou 1 400 à deux fautes ou plus chacune. Les seuils ne sont pas modifiés par cette mise à jour.
 - Progression et réglages conservés dans le stockage du navigateur sur l’appareil. Aucun compte ni transfert de progression.
 - Mise en page portrait et paysage, téléphone et tablette. Cache hors connexion après un premier chargement réussi. Installation Android depuis le menu du navigateur.
 - Coin parent derrière un petit calcul ; il évite les ouvertures accidentelles mais ne constitue pas un contrôle de sécurité.
@@ -32,6 +34,8 @@ Pour tester, servir ce dossier avec un serveur HTTP local ; ne pas ouvrir simple
 ## Vérification
 
 `node check.mjs` vérifie les tirages (600 questions), les bonus, les seuils et la limite des 15 paliers. `node --check app.js` et `node --check sw.js` vérifient la syntaxe.
+
+Barème 10/5/1 : vérifications automatiques de zéro, une, deux et plusieurs fautes, exclusion du bonus après aide, franchissement d’un palier avec un seul point, limites des 15 seuils et parcours de 120 réponses parfaites jusqu’à 1 400 points. L’interface utilise la récompense calculée pour afficher le nombre exact d’étoiles gagnées.
 
 Mise à jour des difficultés : profils 6 / 13 / 26 lettres et migration des anciens réglages vérifiés automatiquement. Dans le navigateur, le niveau Moyen affiche 13 boutons, Difficile en affiche 26, et le niveau Difficile ainsi que les 30 étoiles existantes sont conservés après rechargement. Le changement de difficulté en cours de partie remplace immédiatement la question.
 

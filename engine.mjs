@@ -9,7 +9,13 @@ export function difficultyFor(saved) {
   return saved?.size===26?'hard':saved?.size===13?'medium':'easy';
 }
 export const rankFor = score => Math.min(15, Math.floor(score / 100) + 1);
-export function award(score, streak) { const nextStreak = streak + 1; const bonus = nextStreak % 3 === 0 ? 5 : 0; return {score: score + 10 + bonus, streak: nextStreak, bonus}; }
+export const RANK_THRESHOLDS = Array.from({length:15},(_,i)=>i*100);
+export function award(score, streak, mistakes = 0) {
+  const points = mistakes===0?10:mistakes===1?5:1;
+  const nextStreak = mistakes===0?streak+1:0;
+  const bonus = nextStreak>0&&nextStreak%3===0?5:0;
+  return {score:score+points+bonus,streak:nextStreak,points,bonus};
+}
 export function question(size, previous = '', random = Math.random) {
   const shuffled = [...ALPHABET];
   for (let i=shuffled.length-1;i>0;i--) { const j=Math.floor(random()*(i+1)); [shuffled[i],shuffled[j]]=[shuffled[j],shuffled[i]]; }
