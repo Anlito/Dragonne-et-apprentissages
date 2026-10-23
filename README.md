@@ -4,7 +4,7 @@ Première version de la PWA Android « Dragonne-et-apprentissages », pensée po
 
 ## Fonctionnement
 
-- Les quatre activités de l’accueil sont jouables : lettres, memory des animaux, reconnaissance des chiffres et comptage d’objets ou de points sur un dé.
+- Les dix activités de l’accueil sont jouables : quatre jeux initiaux et six jeux de lecture, tous activables par profil dans le coin parent.
 - Lettres majuscules A–Z et consigne vocale réécoutable. Le coin parent propose un niveau global : **Facile** (6 lettres), **Moyen** (13 lettres), **Difficile** (26 lettres). Facile est le réglage par défaut. Une grille compacte est utilisée à partir de 13 lettres.
 - Le même profil définit le memory avec 4 / 8 / 16 paires (8 / 16 / 32 cartes), les chiffres avec 3 / 6 / 9 choix et le comptage de 1 à 9 à tous les niveaux, avec 3 / 6 / 9 réponses proposées. Le tableau du coin parent expose ces valeurs.
 - Comptage : une quantité exacte de pommes, étoiles, pierres précieuses ou fleurs en papier découpé apparaît. La voix demande combien il y en a, sans annoncer la réponse. Certaines questions présentent un dé avec 1 à 6 points ; les quantités 7 à 9 utilisent toujours des objets. Le haut-parleur répète la question. Le chiffre demandé ne se répète pas immédiatement.
@@ -119,3 +119,28 @@ Dans le coin parent, choisir Dragonne ou Dragon puis cocher les activités à af
 La liste commune se trouve dans `activities.mjs` (identifiant stable, bouton d’accueil, nom, illustration). Pour ajouter un jeu, y ajouter son entrée et son écran/bouton/gestionnaire dans l’application. La liste parent et la normalisation des sauvegardes incluront automatiquement cette nouvelle activité, visible par défaut. Ne pas réutiliser l’identifiant d’un ancien jeu. Cache PWA v19.
 
 Vérifications : migration sans perte des points, booléens de visibilité, indépendance entre enfants, sauvegarde et restauration, cas tous masqués. Dans le navigateur sur localhost : deux jeux masqués pour Dragonne après rechargement, quatre jeux toujours visibles pour Dragon, retour à l’accueil après masquage du jeu ouvert, panneau sans activité et réactivation. Aucun réglage de test modifié sur le site public.
+
+## Six activités de lecture (5 à 10)
+
+1. **Les sons** : écouter un son contextualisé avec un mot exemple, puis choisir sa graphie. Les écritures équivalentes d’un même groupe ne sont pas proposées comme mauvaises réponses (au/eau, an/en…). Le ch de chat et le ch de chorale sont distingués par le son et le contexte.
+2. **J’écoute et je complète** : écouter le mot et compléter une partie manquante. Facile travaille b/d/p/q ; les niveaux suivants ajoutent les graphèmes et des distracteurs.
+3. **Les morceaux du mot** : compléter le groupe de lettres d’un mot visible, avec écoute facultative (par exemple bat… + eau).
+4. **J’écoute un mot** : choisir le mot écrit correspondant à celui entendu.
+5. **Je relie** : écouter trois boutons puis associer chacun à son mot. Les numéros et les liens colorés gardent les associations visibles. Une erreur retire un choix uniquement pour l’audio sélectionné ; il reste disponible pour les autres. Récompense à la fin des trois associations.
+6. **Le mot en morceaux** : écouter puis sélectionner les morceaux dans l’ordre. Exemple cha + peau ; distracteurs comme fa, deau, coin, bou. Possibilité de retirer le dernier morceau. Une mauvaise proposition disparaît pour l’étape en cours et revient à la suivante si nécessaire. Récompense une fois le mot entier terminé.
+
+Difficulté par profil : 3 / 4 / 6 propositions pour les jeux de lecture simples, toujours 3 mots pour Je relie, et 4 / 6 / 8 morceaux pour la construction. Le vocabulaire complexe et les mots plus longs deviennent disponibles aux niveaux supérieurs. Même barème 10 / 5 / 1, bonus, pauses, sauvegarde et évolution ; aucune attribution de points pour un morceau ou une association intermédiaire.
+
+### Contenus, origine et voix
+
+`reading.mjs` contient les familles de sons, exemples, mots masqués et découpages écrits. La source des familles est le fichier utilisateur « liste moi Les sons complexes et les graphèmes mul....xlsx », feuille « liste moi Les sons complexes et », A1:C18. Le fichier original reste inchangé et n’est pas publié. Les graphies sont regroupées par son pour éviter les réponses ambiguës ; œu est la typographie usuelle de oeu. Les contextes gu/ge/ch sont explicités. Les transcriptions API du document ne sont pas lues par la voix.
+
+La synthèse vocale française du téléphone est utilisée, avec un mot exemple pour les sons. Certains groupes complexes sont donnés dans leur mot exemple plutôt qu’isolés, car la voix du navigateur ne garantit pas la lecture d’un phonème seul. Les morceaux sont des segments écrits du mot, pas une transcription phonétique. Le haut-parleur permet de réécouter ; la disponibilité hors connexion dépend des voix installées sur l’appareil. Un enregistrement humain de chaque son isolé reste une amélioration possible.
+
+`assets/lecture.png` : atlas 3 × 2 généré par l’outil intégré, avec une correction du visuel bat + eau. Prompt : six pictogrammes de lecture en papier découpé texturé, haut-parleur et graphèmes, casque et mot incomplet, crayon et bat…/eau, écoute et choix de mots, trois audios reliés à trois cartes, puzzle cha/peau et chapeau. Couleurs sauge/lavande/abricot, fond crème et marges de sécurité.
+
+### Vérifications de cette version
+
+`node check-reading.mjs` : 4 320 tours déterministes sur les six jeux et les trois niveaux ; tous les graphèmes couverts, options sans doublons, présence de la cible, absence de variantes équivalentes parmi les distracteurs, reconstitution exacte des mots, mauvais ordre, doubles clics, associations et récompense limitée au tour complet. Les tests de profils couvrent la migration et l’ajout des six jeux sans perdre les choix précédents. Cache PWA v20 précharge le module et l’atlas.
+
+Navigateur sur localhost : les six écrans ouverts, q après erreur sur p (+5), chap… + eau (+10), trois associations (+5 après une erreur), ma + man (+10), retrait/reprise du dernier morceau, trois puis six propositions, huit morceaux sans défilement en 320 × 568 et 740 × 360 après ajustement, et retour au pavé des neuf chiffres après Je relie. Les voix réellement installées sur les téléphones restent à valider à l’oreille sur les appareils cibles. Aucun score public modifié pour les tests.
