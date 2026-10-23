@@ -112,6 +112,8 @@ Mains : nouvelle illustration générée avec l’outil intégré, puis corrigé
 
 ## Activités visibles par enfant
 
+Publication : nom unique par exécution et tentative pour l’archive GitHub Pages, afin d’éviter les doublons lors d’une relance après une erreur serveur.
+
 Dans le coin parent, choisir Dragonne ou Dragon puis cocher les activités à afficher. Enregistrement immédiat par profil dans la sauvegarde existante ; étoiles, difficulté et apparence conservées. Les anciennes sauvegardes affichent les quatre activités par défaut. Masquer le jeu ouvert ramène à l’accueil et annule ses transitions. Si tous les jeux sont masqués, un panneau invite à les choisir dans le coin parent ; les réglages restent accessibles.
 
 La liste commune se trouve dans `activities.mjs` (identifiant stable, bouton d’accueil, nom, illustration). Pour ajouter un jeu, y ajouter son entrée et son écran/bouton/gestionnaire dans l’application. La liste parent et la normalisation des sauvegardes incluront automatiquement cette nouvelle activité, visible par défaut. Ne pas réutiliser l’identifiant d’un ancien jeu. Cache PWA v19.
