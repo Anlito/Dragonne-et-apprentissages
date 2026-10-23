@@ -16,7 +16,7 @@ let evolutionGate=null;
 let streak=0, completed=0, current=null, mistakes=0, locked=false, turnTimer, evolutionTimer, toastTimer, challengeAnswer, deferredInstall;
 function save(){try{accounts.activeId=activeId;accounts.profiles[activeId]=state;localStorage.setItem(PROFILES_KEY,JSON.stringify(accounts));renderProfileChoices();}catch{$('#storage-note').textContent='Le navigateur ne permet pas de conserver la progression. Elle reste disponible pendant cette partie.';}}
 function setDragon(el,rank,id=activeId){el.style.backgroundImage=`url('${PROFILE_META[id].sprite}')`;const i=rank-1;el.style.backgroundPosition=`${(i%5)*25}% ${Math.floor(i/5)*50}%`;}
-function render(){const rank=rankFor(state.score);$$('[data-score]').forEach(el=>el.textContent=state.score);$$('[data-rank]').forEach(el=>el.textContent=rank);$$('[data-progress]').forEach(el=>el.style.width=`${rank===15?100:(state.score%POINTS_PER_RANK)/POINTS_PER_RANK*100}%`);$$('.dragon').forEach(el=>setDragon(el,rank));$('.rank-label').innerHTML=`${rankNames()[rank-1]} · <span data-rank>${rank}</span>/15`;$('#streak').textContent=`Série · ${streak}`;$('#difficulty').textContent=`${profile().label} · ${activeActivity==='counting'?profile().numbers+' choix':activeActivity==='numbers'?profile().numbers+' choix':profile().letters+' lettres'}`;document.body.classList.toggle('reduce-motion',!state.motion);document.body.dataset.profile=activeId;$$('.dragon').forEach(el=>el.setAttribute('aria-label',PROFILE_META[activeId].companion));setDragon($('.profile-avatar'),rank);$('#profile-toggle').setAttribute('aria-label','Changer de profil, '+PROFILE_META[activeId].label);$('#greet').setAttribute('aria-label','Écouter '+(activeId==='dragon'?'le dragon':'la dragonne'));$('#evolution-title').textContent=PROFILE_META[activeId].companion+' grandit !';renderProfileChoices();}
+function render(){const rank=rankFor(state.score);$$('[data-score]').forEach(el=>el.textContent=state.score);$$('[data-rank]').forEach(el=>el.textContent=rank);$$('[data-progress]').forEach(el=>el.style.width=`${rank===15?100:(state.score%POINTS_PER_RANK)/POINTS_PER_RANK*100}%`);$$('.dragon').forEach(el=>setDragon(el,rank));$('.rank-label').innerHTML=`${rankNames()[rank-1]} · <span data-rank>${rank}</span>/15`;$('#streak').textContent=`Série · ${streak}`;$('#difficulty').textContent=`${profile().label} · ${activeActivity==='counting'?profile().numbers+' choix':activeActivity==='numbers'?profile().numbers+' choix':profile().letters+' lettres'}`;document.body.classList.toggle('reduce-motion',!state.motion);document.body.dataset.profile=activeId;$$('.dragon').forEach(el=>el.setAttribute('aria-label',PROFILE_META[activeId].companion));setDragon($('.profile-avatar'),rank);$('#profile-toggle').setAttribute('aria-label','Changer de profil, '+PROFILE_META[activeId].label);$('#greet').setAttribute('aria-label','Voir '+(activeId==='dragon'?'le dragon':'la dragonne')+' en grand');$('#evolution-title').textContent=PROFILE_META[activeId].companion+' grandit !';renderProfileChoices();}
 function say(text,done){
   let finished=false;const finish=()=>{if(finished)return;finished=true;done?.();};
   if(!state.sound||!('speechSynthesis'in window)){finish();return;}
@@ -56,7 +56,7 @@ function celebrateQuestion(result,evolves,continuation=next){
 }
 function finishQuestionTransition(evolves){
   if(activePage().hidden){clearQuestionTransition();return;}
-  if($('#parent').open){turnTimer=setTimeout(()=>finishQuestionTransition(evolves),300);return;}
+  if($('#parent').open||$('#companion-view').open){turnTimer=setTimeout(()=>finishQuestionTransition(evolves),300);return;}
   $('#question-transition').classList.add('leaving');
   turnTimer=setTimeout(()=>{clearQuestionTransition();if(evolves)showEvolution(false);else afterCelebration();},state.motion?300:0);
 }
@@ -81,7 +81,7 @@ function startListeningActivity(kind){
 $('#letters').onclick=()=>startListeningActivity('letters');$('#numbers-start').onclick=()=>startListeningActivity('numbers');$('#counting-start').onclick=()=>startListeningActivity('counting');
 function returnHome(){clearTimeout(evolutionTimer);evolutionGate?.stop();evolutionGate=null;if($('#evolution').open)$('#evolution').close();document.body.classList.remove('memory-active','numbers-active','counting-active');clearTimeout(turnTimer);clearTimeout(memoryTimer);$('#memory').hidden=true;clearQuestionTransition();if('speechSynthesis'in window)speechSynthesis.cancel();$('#game').hidden=true;$('#welcome').hidden=false;window.scrollTo(0,0);current=null;locked=false;streak=0;completed=0;afterCelebration=null;render();}
 $('#home').onclick=returnHome;
-$('#listen').onclick=listen;$('#greet').onclick=()=>say(activeId==='dragon'?'Coucou ! Je suis ton dragon. Viens jouer avec moi !':'Coucou ! Je suis ta dragonne. Viens jouer avec moi !');
+$('#listen').onclick=listen;$('#greet').onclick=openCompanion;
 $$('[data-soon]').forEach(el=>el.onclick=()=>{toast('Cette activité arrive bientôt !');say(`${el.dataset.soon} arrive bientôt. Tu peux jouer aux lettres !`);});
 $('#settings').onclick=()=>{$('#reset-confirmation').hidden=true;$('#reset-progress').hidden=false;$('#reset-result').textContent='';const a=4+Math.floor(Math.random()*5),b=3+Math.floor(Math.random()*6);challengeAnswer=a+b;$('#challenge').textContent=`${a} + ${b}`;$('#parent-gate').hidden=false;$('#parent-options').hidden=true;$('#gate-answer').value='';$('#gate-error').textContent='';$('#parent').showModal();};
 $('#gate-form').onsubmit=e=>{e.preventDefault();if(Number($('#gate-answer').value)!==challengeAnswer){$('#gate-error').textContent='Réessaie.';return;}$('#parent-gate').hidden=true;$('#parent-options').hidden=false;renderParentSettings();};
@@ -183,3 +183,7 @@ $('#profiles-back').onclick=()=>$('#profiles').close();
 $('#profiles').addEventListener('cancel',event=>{if(!profileChosen)event.preventDefault();});
 $('#parent-profile').onchange=event=>selectProfile(event.target.value);
 renderProfileChoices();$('#profiles').showModal();
+
+function openCompanion(){render();$('#companion-title').textContent=activeId==='dragon'?'Mon dragon':'Ma dragonne';$('#companion-rank').textContent=rankNames()[rankFor(state.score)-1]+' · Palier '+rankFor(state.score)+'/15';$('#companion-view').showModal();}
+$$('.companion-open').forEach(button=>button.onclick=openCompanion);
+$('#companion-view').addEventListener('click',event=>{if(event.target!==event.currentTarget)return;const r=event.currentTarget.getBoundingClientRect();if(event.clientX<r.left||event.clientX>r.right||event.clientY<r.top||event.clientY>r.bottom)event.currentTarget.close();});

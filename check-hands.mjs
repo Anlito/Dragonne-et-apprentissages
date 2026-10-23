@@ -4,7 +4,7 @@ for(let n=1;n<=9;n++){
   const plan=fingerPlan(n),svg=fingerMarkup(n);
   assert.equal(plan.reduce((a,b)=>a+b),n);
   assert.ok(plan.every(v=>v>=1&&v<=5));
-  assert.equal((svg.match(/data-raised=/g)||[]).length,n);
+  assert.deepEqual([...svg.matchAll(/data-fingers="(\d)"/g)].map(m=>Number(m[1])),plan);
   assert.ok(!svg.includes('<text'));
 }
 for(const n of [0,10,1.5,NaN])assert.throws(()=>fingerMarkup(n),RangeError);

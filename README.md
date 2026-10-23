@@ -100,6 +100,12 @@ La synthèse vocale utilise les voix françaises disponibles dans le navigateur 
 - Choix visuel Dragonne / Dragon à chaque ouverture et changement via le portrait de l’en-tête. Chaque enfant possède ses points, son évolution parmi 15 apparences, sa difficulté, son et animations.
 - Migration automatique de la sauvegarde historique vers Dragonne ; Dragon démarre à zéro en Facile. Les deux profils restent locaux à cet appareil, sans connexion ni synchronisation cloud. La saisie manuelle des points et la remise à zéro concernent uniquement le profil sélectionné dans le coin parent.
 - Chiffres et Je compte : Facile = 3 mains sans chiffres ; Moyen = 6 mains avec chiffres ; Difficile = 9 chiffres seuls. Les nombres vont toujours de 1 à 9. De 6 à 9, deux mains montrent 5 + les doigts restants. Les mauvaises réponses disparaissent sans déplacer les autres.
-- Mains SVG déterministes dans `hands.mjs` : nombres de doigts exacts, pouce d’abord. Atlas du dragon bleu et or dans `assets/dragon.png`, généré à partir de la dragonne comme référence de style papier découpé, même grille de 15 évolutions.
-- Sauvegarde : `profiles.mjs`, clé `dragonne-profiles-v1`. L’ancienne clé reste intacte. Cache PWA v17 incluant les nouveaux modules et le dragon.
+- Mains illustrées en papier dans `assets/mains-papier.png`, assemblées par `hands.mjs` : cinq poses contrôlées (1 pouce, 2 en V, 3, 4, 5), puis 5 + le complément pour 6–9. Atlas du dragon bleu et or dans `assets/dragon.png`, généré à partir de la dragonne comme référence de style papier découpé, même grille de 15 évolutions.
+- Sauvegarde : `profiles.mjs`, clé `dragonne-profiles-v1`. L’ancienne clé reste intacte. Cache PWA v18 incluant les nouveaux modules et le dragon.
 - Vérifications : suites moteur, memory, comptage, évolution, migration et indépendance des profils, exactitude de 1 à 9 doigts ; contrôle visuel téléphone des deux représentations, changement de profil et persistance après rechargement.
+
+## Portrait agrandi du compagnon
+
+Toucher le compagnon sur l’accueil ou dans les jeux ouvre un portrait en grand de son apparence actuelle, avec son palier et ses points. Fermeture par grande croix, Échap ou fond extérieur. La pause entre questions attend la fermeture du portrait. Le bouton de changement de profil conserve son rôle.
+
+Mains : nouvelle illustration générée avec l’outil intégré, puis corrigée et contrôlée visuellement pose par pose. Prompt : « cinq mains en papier découpé texturé, peau pêche, poignets vert sauge, fond transparent, 1 / 2 / 3 / 4 / 5 doigts levés, aucune inscription ». Source de production : `assets/mains-papier.png`. Vérification des combinaisons 1–9 et de l’affichage portrait/paysage ; points et sauvegardes inchangés.
