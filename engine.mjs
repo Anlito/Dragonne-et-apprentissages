@@ -8,8 +8,9 @@ export function difficultyFor(saved) {
   if(Object.hasOwn(DIFFICULTIES,saved?.difficulty))return saved.difficulty;
   return saved?.size===26?'hard':saved?.size===13?'medium':'easy';
 }
-export const rankFor = score => Math.min(15, Math.floor(score / 100) + 1);
-export const RANK_THRESHOLDS = Array.from({length:15},(_,i)=>i*100);
+export const POINTS_PER_RANK = 300;
+export const rankFor = score => Math.min(15, Math.floor(score / POINTS_PER_RANK) + 1);
+export const RANK_THRESHOLDS = Array.from({length:15},(_,i)=>i*POINTS_PER_RANK);
 export function award(score, streak, mistakes = 0) {
   const points = mistakes===0?10:mistakes===1?5:1;
   const nextStreak = mistakes===0?streak+1:0;
