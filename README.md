@@ -4,9 +4,11 @@ Première version de la PWA Android « Dragonne-et-apprentissages », pensée po
 
 ## Fonctionnement
 
-- Accueil avec les quatre activités illustrées. Les lettres, le memory des animaux et la reconnaissance des chiffres sont jouables ; les quantités restent à venir.
+- Les quatre activités de l’accueil sont jouables : lettres, memory des animaux, reconnaissance des chiffres et comptage d’objets ou de points sur un dé.
 - Lettres majuscules A–Z et consigne vocale réécoutable. Le coin parent propose un niveau global : **Facile** (6 lettres), **Moyen** (13 lettres), **Difficile** (26 lettres). Facile est le réglage par défaut. Une grille compacte est utilisée à partir de 13 lettres.
-- Le même profil définit le memory avec 4 / 8 / 16 paires (8 / 16 / 32 cartes) et les chiffres avec 3 / 6 / 9 choix. Les futures quantités iront de 1 à 3 / 6 / 9. Le tableau du coin parent expose ces valeurs.
+- Le même profil définit le memory avec 4 / 8 / 16 paires (8 / 16 / 32 cartes), les chiffres avec 3 / 6 / 9 choix et le comptage de 1 à 3 / 6 / 9. Le tableau du coin parent expose ces valeurs.
+- Comptage : une quantité exacte de pommes, étoiles, pierres précieuses ou fleurs en papier découpé apparaît. La voix demande combien il y en a, sans annoncer la réponse. Certaines questions présentent un dé avec 1 à 6 points ; les quantités 7 à 9 utilisent toujours des objets. Le haut-parleur répète la question. Le chiffre demandé ne se répète pas immédiatement.
+- Comptage : pavé 1–2–3 / 4–5–6 / 7–8–9 stable, avec les choix 1 à 3, 1 à 6 ou 1 à 9 selon la difficulté. Une erreur retire seulement le mauvais chiffre et invite à recompter sans révéler la quantité. Points 10 / 5 / 1, bonus, sauvegarde et transitions sont partagés avec les autres activités.
 - Chiffres : une voix française demande un chiffre de 1 à 9. Trois, six ou neuf choix distincts sont tirés selon la difficulté. La bonne réponse fait toujours partie des choix ; le chiffre demandé ne se répète pas immédiatement. Le pavé garde la disposition 1–2–3 / 4–5–6 / 7–8–9, avec des emplacements vides pour les chiffres non proposés. Le haut-parleur permet de réécouter.
 - Chiffres : après une erreur, seul le mauvais choix disparaît sans déplacer les touches. Barème commun 10 / 5 / 1, bonus de série, étoiles sauvegardées, pause de réussite et transformations à chaque tranche de 300 points. Mise en page ajustée à la hauteur du téléphone, en portrait et paysage, avec texture de papier sur les touches.
 - Memory : 16 animaux en papier découpé, choisis et mélangés à chaque partie. Toucher deux cartes ; une mauvaise paire reste visible 1,5 seconde puis se retourne. Les paires trouvées restent visibles à leur place. Aucun chronomètre ni limite de tentatives.
@@ -37,6 +39,7 @@ Application statique sans dépendance de production ni étape de compilation.
 - `app.js` : voix, interactions, sauvegarde et réglages.
 - `engine.mjs` : tirage des lettres, points et paliers.
 - `memory.mjs` : création des grilles, retournement, comparaisons et fin de partie du memory.
+- `counting.mjs` : quantités, choix des objets, consignes et disposition exacte des points du dé.
 - `assets/` : planches approuvées et icônes. Les personnages utilisent pour l’instant la planche de conception comme atlas CSS, à remplacer par des images transparentes séparées pour la finition.
 - `manifest.webmanifest`, `sw.js` : installation et cache PWA. Incrémenter la version du cache à chaque modification publiée des ressources.
 - `.github/workflows/pages.yml` : publication automatique de la branche `main` avec GitHub Pages.
@@ -48,6 +51,12 @@ Pour tester, servir ce dossier avec un serveur HTTP local ; ne pas ouvrir simple
 `node check.mjs` vérifie les tirages (600 questions), les bonus, les seuils et la limite des 15 paliers. `node --check app.js` et `node --check sw.js` vérifient la syntaxe.
 
 Chiffres : 600 tirages supplémentaires vérifient les trois difficultés, le nombre de choix, l’absence de doublons, la présence de la cible, les valeurs entre 1 et 9, l’ordre numérique et l’absence de répétition immédiate.
+
+`node check-counting.mjs` vérifie 900 questions avec générateur déterministe : quantités dans la difficulté, présence de la bonne réponse, choix numériques, absence de répétition immédiate, consignes sans réponse et six faces de dé avec le nombre exact de points. Tous les objets et les deux types de question sont couverts.
+
+Vérifications navigateur du comptage : trois fleurs visibles pour une question à 3, retrait du choix 1 sans changer les objets, gain de +5 après une erreur, pause et question suivante, dé à deux points, choix 3 / 6 / 9 selon la difficulté, bonus de série, neuf pommes visibles sur écran 320 × 568, absence de défilement aussi en 360 × 640 et 844 × 390. Retour à la reconnaissance des chiffres avec le panneau d’objets bien masqué. Tous les gains de test sont limités à localhost.
+
+`assets/objets.png` : atlas 2 × 2 créé avec l’outil de génération d’images intégré, une pomme rouge, une étoile dorée, une pierre mauve et une fleur jaune, centrées sur fond crème et en papier découpé texturé. Les objets sont répétés individuellement en nombre exact dans l’application.
 
 Vérifications navigateur des chiffres : 9 choix en Difficile, 6 en Moyen, 3 en Facile ; disparition d’un choix incorrect ; gain de +1 après plusieurs erreurs ; pause et question suivante avec tous les choix rétablis. Aucun défilement en 360 × 640, 320 × 568 et 844 × 390. Retour aux lettres (6 choix) et au memory (8 cartes) vérifié. La qualité et la disponibilité de la voix française doivent être confirmées sur l’Android cible.
 
@@ -73,6 +82,6 @@ Dépôt : https://github.com/Anlito/Dragonne-et-apprentissages. Hébergement pr�
 
 ## Suite
 
-Développer les quantités puis l’atelier photo. Finaliser les personnages transparents, les voix hors connexion et vérifier les petits écrans ainsi que les orientations sur appareils réels. Aucune caméra n’est activée dans cette version.
+Développer l’atelier photo. Finaliser les personnages transparents, les voix hors connexion et vérifier les petits écrans ainsi que les orientations sur appareils réels. Aucune caméra n’est activée dans cette version.
 
 La synthèse vocale utilise les voix françaises disponibles dans le navigateur ; sa disponibilité hors connexion dépend du système. Le mode muet désactive les consignes parlées : réactiver la voix pour l’exercice d’écoute.
