@@ -1,3 +1,4 @@
+import {trapQuestion} from './traps.mjs';
 import {numberWordsQuestion} from './number-words.mjs';
 // Contenu des activités de lecture. Les groupes reprennent la feuille fournie,
 // avec des exemples et une prononciation contextualisée plutôt qu'une API lue par la voix.
@@ -64,14 +65,15 @@ const PART_ROWS=[
  ['hélicoptère',['hé','li','co','ptère'],3],['ordinateur',['or','di','na','teur'],3]
 ];
 export const PART_WORDS=PART_ROWS.map(([word,parts,level])=>({word,parts,level}));
-export const READING_IDS=['sounds','complete','graphemes','word-listen','link-words','build-word','number-words'];
+export const READING_IDS=['sounds','complete','graphemes','word-listen','link-words','build-word','number-words','traps'];
 export const READING_META={
  'number-words':{label:'Chiffres et lettres',title:'Quel est ce nombre ?',instruction:'Lis le nombre écrit en lettres et retrouve-le parmi les chiffres.'},
- sounds:{label:'Les sons',title:'Écoute le son',instruction:'Écoute, puis touche le groupe de lettres.'},
+ traps:{label:'Les pièges',title:'Attention aux pièges !',instruction:'Écoute le mot et choisis les lettres manquantes.'},
+ sounds:{label:'Les sons',title:'Trouve la syllabe',instruction:'Écoute le mot. Retrouve sa première syllabe.'},
  complete:{label:'J’écoute et je complète',title:'Écoute et complète',instruction:'Écoute le mot. Choisis la partie manquante.'},
  graphemes:{label:'Les morceaux du mot',title:'Complète le mot',instruction:'Complète le mot. Tu peux l’écouter avec le haut-parleur.'},
  'word-listen':{label:'J’écoute un mot',title:'Quel mot as-tu entendu ?',instruction:'Écoute le mot, puis touche son écriture.'},
- 'link-words':{label:'Je relie',title:'Écoute et relie',instruction:'Écoute le son 1, 2 ou 3 et relie-le au bon mot.'},
+ 'link-words':{label:'Je relie',title:'Écoute et relie',instruction:'Écoute les sons et relie-les aux bons mots.'},
  'build-word':{label:'Le mot en morceaux',title:'Construis le mot',instruction:'Écoute le mot. Touche les morceaux dans le bon ordre.'}
 };
 export const readingChoices=level=>({easy:3,medium:4,hard:6})[level]||3;
@@ -81,15 +83,13 @@ function wordSimilarity(a,b){let score=0;for(let i=1;i<=Math.min(a.length,b.leng
 const options=(target,pool,count,random)=>shuffle([target,...shuffle([...new Set(pool)].filter(x=>x!==target),random).slice(0,count-1)],random);
 export function readingQuestion(kind,difficulty='easy',previous=null,random=Math.random){
  if(!READING_IDS.includes(kind))throw new RangeError('Activité inconnue');
+ if(kind==='traps')return trapQuestion(difficulty,previous,random);
  if(kind==='number-words')return numberWordsQuestion(difficulty,previous,random);
  const count=readingChoices(difficulty),maxLevel=difficulty==='easy'?1:2;
  if(kind==='sounds'){
-   const groups=SOUND_GROUPS.filter(g=>g.level<=maxLevel),group=pick(groups,previous,random);
-   const target=shuffle(group.forms,random)[0],example=group.examples?.[target]||group.example;
-   // Un même graphème peut avoir deux sons (ch). Ne pas proposer deux ch.
-   const otherForms=shuffle(groups.filter(g=>g.id!==group.id&&!g.forms.some(form=>group.forms.includes(form))),random).map(g=>shuffle(g.forms,random)[0]);
-   const choices=options(target,otherForms,count,random);
-   return {id:group.id,kind,target,choices,example,prompt:group.say?`Écoute le son ${group.say}, comme dans ${example}.`:`Écoute le groupe de sons dans le mot ${example}.`,display:null};
+   const level={easy:1,medium:2,hard:3}[difficulty]||1,row=pick(PART_WORDS.filter(w=>w.level===level),previous,random),target=row.parts[0];
+   const pool=PART_WORDS.flatMap(w=>w.parts).filter(p=>!row.parts.includes(p));
+   return {id:row.word,kind,target,choices:options(target,pool,count,random),example:row.word,prompt:row.word,display:null};
  }
  if(kind==='complete'||kind==='graphemes'){
    const bank=kind==='complete'?(difficulty==='easy'?LETTER_WORDS:[...LETTER_WORDS,...GRAPH_WORDS.filter(w=>w.level<=maxLevel)]):GRAPH_WORDS.filter(w=>w.level<=maxLevel);

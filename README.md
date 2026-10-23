@@ -4,7 +4,7 @@ Première version de la PWA Android « Dragonne-et-apprentissages », pensée po
 
 ## Fonctionnement
 
-- Les quatorze activités de l’accueil sont jouables : quatre jeux initiaux, sept jeux de lecture, deux jeux de mathématiques et la fluence, tous activables par profil dans le coin parent.
+- Les quinze activités de l’accueil sont jouables : quatre jeux initiaux, huit jeux de lecture, deux jeux de mathématiques et la fluence, tous activables par profil dans le coin parent.
 - Lettres majuscules A–Z et consigne vocale réécoutable. Le coin parent propose un niveau global : **Facile** (6 lettres), **Moyen** (13 lettres), **Difficile** (26 lettres). Facile est le réglage par défaut. Une grille compacte est utilisée à partir de 13 lettres.
 - Le même profil définit le memory avec 4 / 8 / 16 paires (8 / 16 / 32 cartes), les chiffres avec 3 / 6 / 9 choix et le comptage de 1 à 9 à tous les niveaux, avec 3 / 6 / 9 réponses proposées. Le tableau du coin parent expose ces valeurs.
 - Comptage : une quantité exacte de pommes, étoiles, pierres précieuses ou fleurs en papier découpé apparaît. La voix demande combien il y en a, sans annoncer la réponse. Certaines questions présentent un dé avec 1 à 6 points ; les quantités 7 à 9 utilisent toujours des objets. Le haut-parleur répète la question. Le chiffre demandé ne se répète pas immédiatement.
@@ -207,3 +207,18 @@ Fichiers : `fluency.mjs` (texte initial, segmentation, records et horloge), `num
 
 Vérifications : horloge à échéance, arrêt et callback tardif, décompte des mots, meilleur et dernier essai distincts, conservation par texte, restauration et indépendance ; 1 500 questions de nombres sur les trois niveaux, orthographe des nombres composés et absence de choix doubles. Toutes les suites de progression, profils, lecture, maths et récompenses passent.
 Navigateur localhost : minute complète chronométrée, choix du mot 10, validation +10 points, record retrouvé après rechargement ; texte parent modifié puis texte initial restauré avec son record conservé. Vue 360×640 vérifiée. « vingt » associé à 20 : +10 points et question suivante. Aucun profil public modifié.
+
+## Révision des sons, calculs et nouvelle activité Les pièges (v24)
+
+Les consignes ci-dessous remplacent les comportements antérieurs décrits dans l’historique.
+
+- Je relie : « Écoute les sons et relie-les aux bons mots. » Aucun numéro prononcé après « son ».
+- Les sons : la voix prononce uniquement le mot complet. L’enfant retrouve sa première syllabe écrite. Facile : mots en deux morceaux et 3 choix ; Moyen : mots en trois morceaux et 4 choix ; Difficile : mots en quatre morceaux et 6 choix. Une seule syllabe proposée appartient au mot. La banque est `PART_WORDS` dans `reading.mjs`.
+- Calculs et multiplications : plus de voix de consigne ni de commentaire de bonne réponse, plus de bouton son. Les carillons et l’annonce exceptionnelle d’évolution restent disponibles.
+- Jauge : aucun nombre affiché sur le curseur pendant le placement. Une seule validation termine l’essai, même approximatif. Récompense : position exacte 10 points ; écart jusqu’à 5 % de l’échelle 5 points ; jusqu’à 10 % 1 point ; au-delà 0 point. Seule une position exacte continue la série et permet le bonus. Exemple sur 0–100 : écarts 0 / 1–5 / 6–10 / plus de 10. Sur 0–10, un écart de 1 rapporte 1 point. Après validation, la position choisie, le résultat et l’écart sont affichés, puis le jeu continue. Aucun point déjà gagné n’est retiré.
+- Les pièges : mot à écouter et à compléter, deux propositions de lettres/graphies. Facile : b/d et p/q ; Moyen ajoute c/g, c/ss et s/ss ; Difficile ajoute qu/q, c/q et c/k. Les niveaux supérieurs gardent les familles précédentes. Points 10/5/1, sauvegarde, transitions et niveau propre au jeu par enfant. Visibilité réglable dans le coin parent. Le mot parlé précise le mot attendu quand deux complétions pourraient former un mot français. Certaines paires travaillent l’orthographe lexicale et ne se déduisent pas uniquement de la prononciation.
+
+Contenu à enrichir : `traps.mjs`, banque de 24 mots avec découpage, paire et niveau ; la nouvelle carte reprend le visuel de lettres en papier découpé existant. Calcul de précision : `placementReward` dans `maths.mjs`. Le cache inclut le nouveau module.
+
+Tests : 5 760 questions de lecture, 900 tirages des pièges avec contrôle de reconstruction des mots et des niveaux ; toutes les positions et cibles des échelles 0–10, 0–20, 0–100 testées pour les seuils, points et bonus. Régression du gestionnaire réel de récompenses et suites existantes réussies.
+Navigateur localhost : bateau complété avec b (+10), syllabes seules dans les choix, calcul et nombre manquant sans bouton son, jauge 0–100 sans valeur de curseur ; position 50 pour résultat 47 : +5 points, série remise à zéro et passage au calcul suivant. Tests effectués sur des profils locaux uniquement.

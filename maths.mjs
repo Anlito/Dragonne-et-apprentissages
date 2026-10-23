@@ -1,5 +1,11 @@
 import {shuffle} from './reading.mjs';
 export const MATH_IDS=['arithmetic','multiply'];
+export function placementReward(score,streak,value,target,limit){
+ const distance=Math.abs(value-target),ratio=distance/limit;
+ const points=distance===0?10:ratio<=.05?5:ratio<=.1?1:0;
+ const nextStreak=points===10?streak+1:0,bonus=nextStreak>0&&nextStreak%3===0?5:0;
+ return {score:score+points+bonus,streak:nextStreak,points,bonus,distance};
+}
 export const MATH_LEVELS={
  easy:{label:'Facile',limit:10,terms:2,choices:3,factorMax:5},
  medium:{label:'Moyen',limit:20,terms:3,choices:4,factorMax:10},
