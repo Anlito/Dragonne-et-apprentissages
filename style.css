@@ -139,3 +139,11 @@ body.fluency-active footer{display:none}#fluence{max-width:920px;margin-left:aut
 body.reading-active #game.number-spelling[data-reading=number-words] .reading-choice{font-size:clamp(17px,2.7vw,27px);line-height:1.25;min-height:70px;padding:12px 9px;overflow-wrap:anywhere;hyphens:manual}
 @media(max-width:700px){body.reading-active #game.number-spelling[data-reading=number-words] #choices.reading-choices{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}body.reading-active #game.number-spelling[data-reading=number-words] .reading-choice{font-size:18px;min-height:67px;padding:9px 7px}}
 @media(max-height:600px){body.reading-active #game.number-spelling[data-reading=number-words] .reading-choice{min-height:52px;font-size:17px;padding:7px}body.reading-active #game.number-spelling .session-dots{display:none}}
+
+.special-tile{background-image:url('assets/pieges-defi.png');background-size:200% 100%}.special-tile-0{background-position:0 50%}.special-tile-1{background-position:100% 50%}
+.activity.challenge-card{grid-column:1/-1;background:#e3e9cc;display:flex;align-items:center;justify-content:center;gap:24px;padding:12px 22px}.challenge-card .tile{width:120px;height:100px;flex:none}.challenge-card>span:last-child{font-size:24px}
+#challenge-progress{position:sticky;top:0;z-index:6;background:#e8dbab;color:#64512e;border-radius:16px;padding:9px 16px;text-align:center;font-weight:800;margin:8px auto 12px;max-width:400px;box-shadow:0 3px 0 #d2bf8f}#challenge-finish{text-align:center;max-width:400px}#challenge-finish button{margin:8px}
+.challenge-settings{background:#edf0db;border-radius:20px;padding:16px;margin:22px 0}#challenge-settings{display:grid;grid-template-columns:1fr 1fr;gap:10px}#challenge-settings label{display:flex;gap:9px;align-items:center;font-size:14px}#challenge-settings input{width:24px;height:24px;flex:none;accent-color:#8da76e}
+@media(max-width:500px){.challenge-card .tile{width:85px;height:85px}.challenge-card>span:last-child{font-size:20px}.activity.challenge-card{gap:12px;padding:9px}#challenge-settings{grid-template-columns:1fr}#challenge-progress{font-size:13px;padding:6px;margin:4px auto}}
+
+body.challenge-running .fluence-toolbar{top:35px}

@@ -1,3 +1,4 @@
+import {SYLLABLE_WORDS,EXTRA_LETTER_WORDS,EXTRA_GRAPH_WORDS} from './content.mjs';
 import {trapQuestion} from './traps.mjs';
 import {numberWordsQuestion} from './number-words.mjs';
 // Contenu des activités de lecture. Les groupes reprennent la feuille fournie,
@@ -51,25 +52,15 @@ const GRAPH_ROWS=[
  ['train','tr','ain','',2],['faim','f','aim','',2],['plein','pl','ein','',2],['brun','br','un','',2],['parfum','parf','um','',2]
 ];
 const convert=rows=>rows.map(([word,before,target,after,level=1])=>({word,before,target,after,level}));
-export const LETTER_WORDS=convert(LETTER_ROWS),GRAPH_WORDS=convert(GRAPH_ROWS);
+const uniqueWords=rows=>[...new Map(rows.map(w=>[w.word,w])).values()];
+export const LETTER_WORDS=uniqueWords([...EXTRA_LETTER_WORDS,...convert(LETTER_ROWS)]),GRAPH_WORDS=uniqueWords([...EXTRA_GRAPH_WORDS,...convert(GRAPH_ROWS)]);
 export const WORDS=[...new Map([...LETTER_WORDS,...GRAPH_WORDS].map(row=>[row.word,{word:row.word,level:row.level}])).values()];
-const PART_ROWS=[
- ['chapeau',['cha','peau'],1],['bateau',['ba','teau'],1],['cadeau',['ca','deau'],1],['lapin',['la','pin'],1],
- ['sapin',['sa','pin'],1],['mouton',['mou','ton'],1],['ballon',['bal','lon'],1],['maison',['mai','son'],1],
- ['poule',['pou','le'],1],['robot',['ro','bot'],1],['tapis',['ta','pis'],1],['jardin',['jar','din'],1],
- ['maman',['ma','man'],1],['salade',['sa','la','de'],2],['banane',['ba','na','ne'],2],
- ['domino',['do','mi','no'],2],['pirate',['pi','ra','te'],2],['tomate',['to','ma','te'],2],
- ['chocolat',['cho','co','lat'],2],['parapluie',['pa','ra','pluie'],2],['animal',['a','ni','mal'],2],
- ['cinéma',['ci','né','ma'],2],['caméra',['ca','mé','ra'],2],['canapé',['ca','na','pé'],2],
- ['locomotive',['lo','co','mo','tive'],3],['télévision',['té','lé','vi','sion'],3],['rhinocéros',['rhi','no','cé','ros'],3],
- ['hélicoptère',['hé','li','co','ptère'],3],['ordinateur',['or','di','na','teur'],3]
-];
-export const PART_WORDS=PART_ROWS.map(([word,parts,level])=>({word,parts,level}));
+export const PART_WORDS=uniqueWords(SYLLABLE_WORDS);
 export const READING_IDS=['sounds','complete','graphemes','word-listen','link-words','build-word','number-words','traps'];
 export const READING_META={
  'number-words':{label:'Chiffres et lettres',title:'Quel est ce nombre ?',instruction:'Lis le nombre écrit en lettres et retrouve-le parmi les chiffres.'},
  traps:{label:'Les pièges',title:'Attention aux pièges !',instruction:'Écoute le mot et choisis les lettres manquantes.'},
- sounds:{label:'Les sons',title:'Trouve la syllabe',instruction:'Écoute le mot. Retrouve sa première syllabe.'},
+ sounds:{label:'Les sons',title:'Trouve la syllabe',instruction:'Trouve une des syllabes du mot suivant.'},
  complete:{label:'J’écoute et je complète',title:'Écoute et complète',instruction:'Écoute le mot. Choisis la partie manquante.'},
  graphemes:{label:'Les morceaux du mot',title:'Complète le mot',instruction:'Complète le mot. Tu peux l’écouter avec le haut-parleur.'},
  'word-listen':{label:'J’écoute un mot',title:'Quel mot as-tu entendu ?',instruction:'Écoute le mot, puis touche son écriture.'},
@@ -87,9 +78,9 @@ export function readingQuestion(kind,difficulty='easy',previous=null,random=Math
  if(kind==='number-words')return numberWordsQuestion(difficulty,previous,random);
  const count=readingChoices(difficulty),maxLevel=difficulty==='easy'?1:2;
  if(kind==='sounds'){
-   const level={easy:1,medium:2,hard:3}[difficulty]||1,row=pick(PART_WORDS.filter(w=>w.level===level),previous,random),target=row.parts[0];
-   const pool=PART_WORDS.flatMap(w=>w.parts).filter(p=>!row.parts.includes(p));
-   return {id:row.word,kind,target,choices:options(target,pool,count,random),example:row.word,prompt:row.word,display:null};
+   const level={easy:1,medium:2,hard:3}[difficulty]||1,row=pick(SYLLABLE_WORDS.filter(w=>w.level===level),previous,random),audible=row.parts.filter(p=>p.length>1&&!['le','de','te','que','re','ne','me','ge','ce','ve','che','gne'].includes(p)),target=shuffle(audible.length?audible:[row.parts[0]],random)[0];
+   const pool=SYLLABLE_WORDS.flatMap(w=>w.parts).filter(p=>!row.parts.includes(p));
+   return {id:row.word,kind,target,choices:options(target,pool,count,random),example:row.word,prompt:'Trouve une des syllabes du mot suivant : '+row.word+'.',display:null};
  }
  if(kind==='complete'||kind==='graphemes'){
    const bank=kind==='complete'?(difficulty==='easy'?LETTER_WORDS:[...LETTER_WORDS,...GRAPH_WORDS.filter(w=>w.level<=maxLevel)]):GRAPH_WORDS.filter(w=>w.level<=maxLevel);

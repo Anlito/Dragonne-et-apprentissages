@@ -4,7 +4,7 @@ Première version de la PWA Android « Dragonne-et-apprentissages », pensée po
 
 ## Fonctionnement
 
-- Les quinze activités de l’accueil sont jouables : quatre jeux initiaux, huit jeux de lecture, deux jeux de mathématiques et la fluence, tous activables par profil dans le coin parent.
+- Les seize activités de l’accueil sont jouables : quatre jeux initiaux, huit jeux de lecture, deux jeux de mathématiques, la fluence et le défi de 20 exercices, tous activables par profil dans le coin parent.
 - Lettres majuscules A–Z et consigne vocale réécoutable. Le coin parent propose un niveau global : **Facile** (6 lettres), **Moyen** (13 lettres), **Difficile** (26 lettres). Facile est le réglage par défaut. Une grille compacte est utilisée à partir de 13 lettres.
 - Le même profil définit le memory avec 4 / 8 / 16 paires (8 / 16 / 32 cartes), les chiffres avec 3 / 6 / 9 choix et le comptage de 1 à 9 à tous les niveaux, avec 3 / 6 / 9 réponses proposées. Le tableau du coin parent expose ces valeurs.
 - Comptage : une quantité exacte de pommes, étoiles, pierres précieuses ou fleurs en papier découpé apparaît. La voix demande combien il y en a, sans annoncer la réponse. Certaines questions présentent un dé avec 1 à 6 points ; les quantités 7 à 9 utilisent toujours des objets. Le haut-parleur répète la question. Le chiffre demandé ne se répète pas immédiatement.
@@ -231,3 +231,36 @@ Chiffres et lettres : les questions alternent maintenant dans les deux sens. Exe
 
 Fichiers : `number-words.mjs` pour la génération et l’alternance ; `app.js`, `index.html`, `style.css` pour les consignes, la coche et les réponses écrites. Cache v25. Tests de 1 500 questions couvrant l’alternance, les limites, l’unicité des choix, la présence de la bonne réponse, l’orthographe et l’absence de répétition immédiate du nombre ; tests de lecture et récompenses réussis.
 Vérification navigateur sur localhost : quatre-vingt-deux → 82 (+10), question suivante 47 → quarante-sept (+10), réponses longues lisibles en 360×640. Minute complète de fluence : coche absente pendant la lecture, désactivée à zéro sans sélection, puis verte et active après choix du dernier mot ; validation enregistrée. Aucun profil public modifié.
+
+## Défi de 20 exercices, contenus enrichis et réponses proches (v26)
+
+L’accueil propose en première position une grande carte « Mon défi · 20 exercices ». Chaque série tire au hasard parmi les activités choisies pour l’enfant et visibles sur son accueil. Le tirage répartit les familles sélectionnées avant de les réutiliser et évite deux familles identiques de suite si plusieurs sont disponibles. Les questions déjà posées sont évitées tant que la banque le permet. Dans un domaine limité (ex. seulement neuf chiffres), une cible peut forcément revenir ; les choix sont renouvelés. Si aucune activité n’est disponible, un message invite à régler le défi côté parent.
+
+Dans le coin parent, la section « Mon défi · 20 exercices » enregistre les cases pour chaque enfant. Memory, fluence, Je relie et construction sont exclus par défaut car plus longs, mais peuvent être inclus. Une grille entière de memory, une minute de fluence validée, trois associations ou un mot entièrement construit comptent chacun comme une épreuve. Une multiplication du défi utilise une table choisie au hasard de 1 à 10, avec le niveau habituel de l’activité. Les autres niveaux sont également conservés par jeu. Une modification du niveau, de la visibilité ou des points qui relance une activité annule le défi en cours.
+
+Un bandeau indique l’épreuve 1/20 à 20/20. Les points, séries et transformations fonctionnent normalement, sans remise à zéro entre les activités. L’écran final annonce le gain total et permet de relancer un nouveau défi. Quitter, changer d’enfant ou recharger annule la série en cours ; les points déjà gagnés restent sauvegardés. La composition du défi, les niveaux et les points sont conservés dans `dragonne-profiles-v2` ; aucun compte ni serveur ajouté.
+
+### Banques de contenu
+
+Les volumes ci-dessous portent sur les banques complètes ; les niveaux filtrent leur contenu. Les lettres de l’alphabet et les chiffres gardent leurs domaines naturels. Les grilles, quantités, choix de chiffres et calculs sont générés aléatoirement ; la fluence garde le texte personnalisable du parent.
+
+| Activité | Contenu disponible |
+| --- | --- |
+| J’écoute et je complète | 111 mots avec une lettre manquante, plus les graphèmes aux niveaux supérieurs |
+| Les morceaux du mot | 183 mots avec un graphème manquant |
+| Trouve la syllabe | 266 mots, avec découpage de deux, trois ou quatre syllabes selon le niveau |
+| Le mot en morceaux | 266 mots à construire |
+| J’écoute un mot / Je relie | 261 mots ; associations de trois mots mélangés |
+| Les pièges | 167 mots différents, 204 exercices mot/paire |
+
+`content.mjs` contient les nouvelles banques. Les syllabes orales sont séparées des e muets : un fragment réduit à un e muet n’est pas une réponse à trouver. La voix des syllabes explique « Trouve une des syllabes du mot suivant : … » puis prononce le mot entier ; la cible peut être une syllabe différente du début, et les distracteurs ne contiennent aucune autre syllabe du même mot.
+
+Chiffres et lettres : Facile garde des choix variés. Moyen propose des voisins plus proches. Difficile associe des nombres voisins, des écritures avec le même début et une même unité dans une autre dizaine. Pour 97, les distracteurs incluent notamment 98, 93 et 87. Les règles s’appliquent dans les deux sens, avec une seule bonne réponse. `numberDistractors` dans `number-words.mjs` est testée sur les bornes 0 et 100 et toutes les cibles.
+
+### Graphismes et fichiers
+
+`assets/pieges-defi.png` est un nouvel atlas de deux pictogrammes produit par le skill imagegen avec l’outil intégré. Prompt : papier découpé texturé ivoire/sauge/lavande/or, miroir avec b/d et loupe pour les pièges ; chemin d’épreuves avec drapeau, cartes A, 3, + et livre pour le défi. Le visuel des pièges est indépendant de J’écoute et je complète. L’original généré est conservé. `challenge.mjs` gère les cases, le tirage et l’évitement des doublons ; `profiles.mjs` migre les cases par enfant ; `app.js` réutilise les exercices et leur récompense. Cache PWA v26 incluant les deux nouveaux modules et l’atlas.
+
+Vérifications : toutes les banques dépassent 100 mots, reconstruction exacte des mots, présence et unicité de la cible de syllabe ; réponses proches et limites ; séries de 20, exclusions et options par enfant, arrêt réel au 20e exercice, memory compté à la fin de la grille et fluence à la validation. Toutes les suites de progression, maths, lecture, profils et récompenses passent.
+
+Navigateur localhost : passage entre deux activités du défi, parcours complet de 20 multiplications toutes différentes, 230 étoiles avec bonus, transformation de palier puis reprise et écran final. Composition limitée à une activité conservée après rechargement ; un autre enfant garde ses onze activités cochées par défaut. Inclusion explicite du memory vérifiée sur téléphone. Consigne de syllabe et nombres proches vérifiés : 55 face à 51/53/56/45/54 ; 26 face à vingt-cinq, vingt-deux, vingt-huit, seize et vingt-sept. Accueil en 360×640 et nouveau visuel vérifiés. Les tests ont uniquement utilisé les profils de localhost.

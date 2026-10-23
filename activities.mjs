@@ -1,5 +1,6 @@
 // Une entrée par activité : les nouveaux jeux seront visibles par défaut.
 export const ACTIVITIES=[
+  {id:'challenge',button:'challenge-start',label:'Mon défi · 20 exercices',specialTile:1},
   {id:'letters',button:'letters',label:'Les lettres',tile:0},
   {id:'memory',button:'memory-start',label:'Les paires',tile:1},
   {id:'numbers',button:'numbers-start',label:'Les chiffres',tile:2},
@@ -10,7 +11,7 @@ export const ACTIVITIES=[
   ].map(([id,label],readingTile)=>({id,button:id+'-start',label,readingTile})),
   {id:'arithmetic',button:'arithmetic-start',label:'Les calculs + et −',mathTile:0},
   {id:'multiply',button:'multiply-start',label:'Les multiplications',mathTile:1},
-  {id:'traps',button:'traps-start',label:'Les pièges',readingTile:1},
+  {id:'traps',button:'traps-start',label:'Les pièges',specialTile:0},
   {id:'fluency',button:'fluency-start',label:'Fluence · 1 minute',studyTile:0},
   {id:'number-words',button:'number-words-start',label:'Chiffres et lettres',studyTile:1}
 ];

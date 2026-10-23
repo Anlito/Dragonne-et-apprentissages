@@ -1,3 +1,4 @@
+import {SYLLABLE_WORDS} from './content.mjs';
 import assert from 'node:assert/strict';
 import {SOUND_GROUPS,LETTER_WORDS,GRAPH_WORDS,PART_WORDS,READING_IDS,readingChoices,readingQuestion,selectPiece,matchWord} from './reading.mjs';
 let seed=7521;const random=()=>{seed=(1664525*seed+1013904223)>>>0;return seed/4294967296;};
@@ -12,7 +13,7 @@ for(const kind of READING_IDS)for(const difficulty of ['easy','medium','hard']){
    assert.equal(q.choices.length,readingChoices(difficulty));assert.equal(new Set(q.choices).size,q.choices.length);assert.ok(q.choices.includes(q.target));assert.notEqual(q.id,previous);
   }
   if(kind==='sounds'){
-   const row=PART_WORDS.find(w=>w.word===q.example);assert.equal(q.prompt,row.word);assert.equal(q.target,row.parts[0]);assert.equal(q.choices.filter(x=>row.parts.includes(x)).length,1);
+   const row=SYLLABLE_WORDS.find(w=>w.word===q.example);assert.ok(q.prompt.includes(row.word));assert.ok(row.parts.includes(q.target));assert.equal(q.choices.filter(x=>row.parts.includes(x)).length,1);
   }
   if(kind==='traps'){assert.equal(q.before+q.target+q.after,q.word);assert.equal(q.choices.length,2);assert.ok(q.choices.includes(q.target));assert.equal(q.prompt,q.word);}
   if(kind==='build-word'){

@@ -12,6 +12,21 @@ export function numberWordsQuestion(difficulty='easy',previous=null,random=Math.
  const max={easy:9,medium:20,hard:100}[difficulty]??9;
  const inverse=String(previous).startsWith('letters:'),previousNumber=String(previous).split(':').at(-1);
  const values=Array.from({length:max+1},(_,i)=>i),number=shuffle(values.filter(n=>String(n)!==previousNumber),random)[0];
- const numbers=shuffle([number,...shuffle(values.filter(n=>n!==number),random).slice(0,readingChoices(difficulty)-1)],random);
+ const numbers=shuffle([number,...numberDistractors(number,max,readingChoices(difficulty)-1,difficulty,random)],random);
  return {kind:'number-words',id:(inverse?'digits:':'letters:')+number,number,direction:inverse?'digits-to-letters':'letters-to-digits',target:inverse?numberInFrench(number):number,label:inverse?String(number):numberInFrench(number),choices:inverse?numbers.map(numberInFrench):numbers,display:'number-word',prompt:inverse?'Regarde le nombre et retrouve son écriture en lettres.':'Lis le nombre écrit en lettres et retrouve-le parmi les chiffres.'};
+}
+export function numberDistractors(number,max,count,difficulty,random=Math.random){
+ const pool=shuffle(Array.from({length:max+1},(_,n)=>n).filter(n=>n!==number),random);
+ if(difficulty!=='easy'){
+  const similarity=n=>{const a=numberInFrench(number).split('-'),b=numberInFrench(n).split('-');let prefix=0;while(prefix<Math.min(a.length,b.length)&&a[prefix]===b[prefix])prefix++;return prefix*20+(n%10===number%10?12:0)+(Math.floor(n/10)===Math.floor(number/10)?10:0)-Math.abs(n-number)/10;};
+  pool.sort((a,b)=>similarity(b)-similarity(a));
+  // Au niveau difficile, mêler un voisin immédiat et une même unité (97 / 87).
+  if(difficulty==='hard'&&number>=20){
+   const nearby=number+1<=max?number+1:number-1,varied=number%10>=4?number-4:number+4;
+   const sameUnit=pool.find(n=>n%10===number%10&&Math.abs(n-number)===10);
+   const priority=[nearby,varied,sameUnit].filter((n,i,a)=>pool.includes(n)&&a.indexOf(n)===i);
+   return [...priority,...pool.filter(n=>!priority.includes(n))].slice(0,count);
+  }
+ }
+ return pool.slice(0,count);
 }
