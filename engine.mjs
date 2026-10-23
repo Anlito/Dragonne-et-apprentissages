@@ -26,3 +26,10 @@ export function question(size, previous = '', random = Math.random) {
   if(size!==26) for(let i=choices.length-1;i>0;i--){const j=Math.floor(random()*(i+1));[choices[i],choices[j]]=[choices[j],choices[i]];}
   return {target,choices};
 }
+export function numberQuestion(size,previous=null,random=Math.random){
+  if(![3,6,9].includes(size))throw new RangeError('Nombre de choix invalide');
+  const digits=Array.from({length:9},(_,i)=>i+1);
+  for(let i=digits.length-1;i>0;i--){const j=Math.floor(random()*(i+1));[digits[i],digits[j]]=[digits[j],digits[i]];}
+  const target=digits.find(n=>n!==previous);
+  return {target,choices:[target,...digits.filter(n=>n!==target).slice(0,size-1)].sort((a,b)=>a-b)};
+}

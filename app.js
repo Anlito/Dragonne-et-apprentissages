@@ -1,5 +1,5 @@
 import {ANIMALS,createMemory,flipMemory,settleMemory,memoryLayout} from './memory.mjs';
-import {award,rankFor,question,DIFFICULTIES,difficultyFor,RANK_THRESHOLDS,POINTS_PER_RANK} from './engine.mjs';
+import {award,rankFor,question,numberQuestion,DIFFICULTIES,difficultyFor,RANK_THRESHOLDS,POINTS_PER_RANK} from './engine.mjs';
 const $=s=>document.querySelector(s), $$=s=>document.querySelectorAll(s);
 const key='dragonne-v1';
 let state={score:0,difficulty:'easy',sound:true,motion:true};
@@ -11,14 +11,24 @@ let streak=0, completed=0, current=null, mistakes=0, locked=false, turnTimer, ev
 const names=['Petite aventurière','Petite exploratrice','Première cape','Jeune écuyère','Écuyère courageuse','Écuyère étoilée','Petite chevalière','Chevalière vaillante','Chevalière du royaume','Gardienne des feuilles','Gardienne des étoiles','Gardienne de la lumière','Chevalière dorée','Héroïne couronnée','Héroïne du soleil'];
 function save(){try{localStorage.setItem(key,JSON.stringify(state));}catch{$('#storage-note').textContent='Le navigateur ne permet pas de conserver la progression. Elle reste disponible pendant cette partie.';}}
 function setDragon(el,rank){const i=rank-1;el.style.backgroundPosition=`${(i%5)*25}% ${Math.floor(i/5)*50}%`;}
-function render(){const rank=rankFor(state.score);$$('[data-score]').forEach(el=>el.textContent=state.score);$$('[data-rank]').forEach(el=>el.textContent=rank);$$('[data-progress]').forEach(el=>el.style.width=`${rank===15?100:(state.score%POINTS_PER_RANK)/POINTS_PER_RANK*100}%`);$$('.dragon').forEach(el=>setDragon(el,rank));$('.rank-label').innerHTML=`${names[rank-1]} · <span data-rank>${rank}</span>/15`;$('#streak').textContent=`Série · ${streak}`;$('#difficulty').textContent=`${profile().label} · ${profile().letters} lettres`;document.body.classList.toggle('reduce-motion',!state.motion);}
+function render(){const rank=rankFor(state.score);$$('[data-score]').forEach(el=>el.textContent=state.score);$$('[data-rank]').forEach(el=>el.textContent=rank);$$('[data-progress]').forEach(el=>el.style.width=`${rank===15?100:(state.score%POINTS_PER_RANK)/POINTS_PER_RANK*100}%`);$$('.dragon').forEach(el=>setDragon(el,rank));$('.rank-label').innerHTML=`${names[rank-1]} · <span data-rank>${rank}</span>/15`;$('#streak').textContent=`Série · ${streak}`;$('#difficulty').textContent=`${profile().label} · ${activeActivity==='numbers'?profile().numbers+' chiffres':profile().letters+' lettres'}`;document.body.classList.toggle('reduce-motion',!state.motion);}
 function say(text,done){if(!state.sound||!('speechSynthesis'in window)){done?.();return;}speechSynthesis.cancel();const utter=new SpeechSynthesisUtterance(text);utter.lang='fr-FR';utter.rate=.82;const voice=speechSynthesis.getVoices().find(v=>v.lang.toLowerCase().startsWith('fr'));if(voice)utter.voice=voice;utter.onend=done;utter.onerror=done;speechSynthesis.speak(utter);}
 let audio;function chime(big=false){if(!state.sound)return;try{audio??=new(window.AudioContext||window.webkitAudioContext)();audio.resume();(big?[523.25,659.25,783.99,1046.5]:[659.25,783.99]).forEach((f,i)=>{const o=audio.createOscillator(),g=audio.createGain(),t=audio.currentTime+i*.13;o.type='sine';o.frequency.value=f;g.gain.setValueAtTime(0,t);g.gain.linearRampToValueAtTime(.07,t+.015);g.gain.exponentialRampToValueAtTime(.001,t+.3);o.connect(g);g.connect(audio.destination);o.start(t);o.stop(t+.31);});}catch{}}
 function toast(text){clearTimeout(toastTimer);$('#toast').textContent=text;$('#toast').hidden=false;toastTimer=setTimeout(()=>$('#toast').hidden=true,2600);}
-function listen(){if(!current)return;if(!state.sound){$('#voice-note').textContent='La voix est désactivée dans le coin parent.';return;}if(!('speechSynthesis'in window)){$('#voice-note').textContent='La voix n’est pas disponible dans ce navigateur.';return;}say(`Trouve la lettre ${current.target}.`);$('#voice-note').textContent='Tu peux réécouter autant que tu veux.';}
+function listen(){if(!current)return;$('#voice-note').classList.toggle('voice-warning',!state.sound||!('speechSynthesis'in window));if(!state.sound){$('#voice-note').textContent='La voix est désactivée dans le coin parent.';return;}if(!('speechSynthesis'in window)){$('#voice-note').textContent='La voix n’est pas disponible dans ce navigateur.';return;}say(`Trouve ${activeActivity==='numbers'?'le chiffre':'la lettre'} ${current.target}.`);$('#voice-note').textContent='Tu peux réécouter autant que tu veux.';}
 function dots(){$('#session-dots').replaceChildren(...Array.from({length:10},(_,i)=>{const el=document.createElement('i');if(i<completed%10||(completed>0&&completed%10===0))el.className='done';return el;}));}
-function next(){if($('#game').hidden)return;clearQuestionTransition();$('#game').classList.remove('question-enter');void $('#game').offsetWidth;$('#game').classList.add('question-enter');locked=false;mistakes=0;current=question(profile().letters,current?.target);$('#choices').classList.toggle('alphabet',profile().letters>=13);$('#choices').replaceChildren(...current.choices.map(letter=>{const el=document.createElement('button');el.className='letter';el.textContent=letter;el.setAttribute('aria-label',`Lettre ${letter}`);el.onclick=()=>choose(letter,el);return el;}));$('#feedback').textContent='Prends ton temps, tu peux réécouter.';dots();listen();}
-function choose(letter,el){if(locked||el.disabled)return;if(letter!==current.target){mistakes++;streak=0;el.classList.add('removed');el.disabled=true;el.setAttribute('aria-hidden','true');$('#feedback').textContent='Un choix en moins. Essaie encore !';say(`Essaie encore. Trouve la lettre ${current.target}.`);render();return;}locked=true;el.classList.add('correct');const oldRank=rankFor(state.score),result=award(state.score,streak,mistakes);state.score=result.score;streak=result.streak;completed++;save();render();dots();$('#feedback').textContent=`Bravo ! +${result.points} ${result.points===1?'étoile':'étoiles'}${result.bonus?' et +5 de bonus':''} !`;chime();say(result.bonus?'Bravo ! Tu gagnes un bonus !':'Bravo, tu as trouvé !');celebrateQuestion(result,rankFor(state.score)>oldRank);}
+function next(){
+  if($('#game').hidden)return;clearQuestionTransition();$('#game').classList.remove('question-enter');void $('#game').offsetWidth;$('#game').classList.add('question-enter');locked=false;mistakes=0;
+  const numeric=activeActivity==='numbers';current=numeric?numberQuestion(profile().numbers,current?.target):question(profile().letters,current?.target);
+  $('#choices').classList.toggle('alphabet',!numeric&&profile().letters>=13);$('#choices').classList.toggle('numberpad',numeric);
+  const values=numeric?Array.from({length:9},(_,i)=>i+1):current.choices;
+  $('#choices').replaceChildren(...values.map(value=>{
+    if(numeric&&!current.choices.includes(value)){const gap=document.createElement('span');gap.className='number-space';gap.setAttribute('aria-hidden','true');return gap;}
+    const el=document.createElement('button');el.className=numeric?'letter number-key':'letter';el.textContent=value;el.setAttribute('aria-label',(numeric?'Chiffre ':'Lettre ')+value);el.onclick=()=>choose(value,el);return el;
+  }));
+  $('#feedback').textContent='Prends ton temps, tu peux réécouter.';dots();listen();
+}
+function choose(letter,el){if(locked||el.disabled)return;if(letter!==current.target){mistakes++;streak=0;el.classList.add('removed');el.disabled=true;el.setAttribute('aria-hidden','true');$('#feedback').textContent='Un choix en moins. Essaie encore !';say(`Essaie encore. Trouve ${activeActivity==='numbers'?'le chiffre':'la lettre'} ${current.target}.`);render();return;}locked=true;el.classList.add('correct');const oldRank=rankFor(state.score),result=award(state.score,streak,mistakes);state.score=result.score;streak=result.streak;completed++;save();render();dots();$('#feedback').textContent=`Bravo ! +${result.points} ${result.points===1?'étoile':'étoiles'}${result.bonus?' et +5 de bonus':''} !`;chime();say(result.bonus?'Bravo ! Tu gagnes un bonus !':'Bravo, tu as trouvé !');celebrateQuestion(result,rankFor(state.score)>oldRank);}
 function clearQuestionTransition(){
   $('#question-transition').hidden=true;
   $('#question-transition').classList.remove('leaving');
@@ -42,11 +52,17 @@ function finishQuestionTransition(evolves){
 function showEvolution(preview){clearTimeout(turnTimer);const dialog=$('#evolution');dialog.dataset.preview=String(preview);$('#evolution-rank').textContent=`${names[rankFor(state.score)-1]} · Palier ${rankFor(state.score)}`;dialog.showModal();const dragon=dialog.querySelector('.dragon');dragon.style.animation='none';void dragon.offsetWidth;dragon.style.animation='';chime(true);say('Ta dragonne grandit ! Quelle belle aventure !');clearTimeout(evolutionTimer);evolutionTimer=setTimeout(closeEvolution,state.motion?3400:1400);}
 function closeEvolution(){clearTimeout(evolutionTimer);const dialog=$('#evolution');const preview=dialog.dataset.preview==='true';dialog.close();if(!preview&&!activePage().hidden)afterCelebration();}
 $('#skip-evolution').onclick=closeEvolution;$('#evolution').addEventListener('cancel',e=>{e.preventDefault();closeEvolution();});
-$('#letters').onclick=()=>{document.body.classList.remove('memory-active');activeActivity='letters';clearTimeout(memoryTimer);$('#memory').hidden=true;$('#welcome').hidden=true;$('#game').hidden=false;window.scrollTo(0,0);streak=0;completed=0;render();next();};
-$('#home').onclick=()=>{document.body.classList.remove('memory-active');clearTimeout(turnTimer);clearTimeout(memoryTimer);$('#memory').hidden=true;clearQuestionTransition();if('speechSynthesis'in window)speechSynthesis.cancel();$('#game').hidden=true;$('#welcome').hidden=false;window.scrollTo(0,0);current=null;locked=false;};
+function startListeningActivity(kind){
+  clearTimeout(turnTimer);clearTimeout(memoryTimer);clearQuestionTransition();document.body.classList.remove('memory-active');document.body.classList.toggle('numbers-active',kind==='numbers');activeActivity=kind;
+  $('#memory').hidden=true;$('#welcome').hidden=true;$('#game').hidden=false;window.scrollTo(0,0);streak=0;completed=0;current=null;
+  $('#activity-label').textContent=kind==='numbers'?'LES CHIFFRES':'LES LETTRES';$('#listen').setAttribute('aria-label',kind==='numbers'?'Réécouter le chiffre':'Réécouter la lettre');$('#choices').setAttribute('aria-label',kind==='numbers'?'Choisis le chiffre':'Choisis la lettre');
+  render();next();fitNumberScreen();
+}
+$('#letters').onclick=()=>startListeningActivity('letters');$('#numbers-start').onclick=()=>startListeningActivity('numbers');
+$('#home').onclick=()=>{document.body.classList.remove('memory-active','numbers-active');clearTimeout(turnTimer);clearTimeout(memoryTimer);$('#memory').hidden=true;clearQuestionTransition();if('speechSynthesis'in window)speechSynthesis.cancel();$('#game').hidden=true;$('#welcome').hidden=false;window.scrollTo(0,0);current=null;locked=false;};
 $('#listen').onclick=listen;$('#greet').onclick=()=>say('Coucou ! Je suis ta dragonne. Viens jouer avec moi !');
 $$('[data-soon]').forEach(el=>el.onclick=()=>{toast('Cette activité arrive bientôt !');say(`${el.dataset.soon} arrive bientôt. Tu peux jouer aux lettres !`);});
-$('#settings').onclick=()=>{const a=4+Math.floor(Math.random()*5),b=3+Math.floor(Math.random()*6);challengeAnswer=a+b;$('#challenge').textContent=`${a} + ${b}`;$('#parent-gate').hidden=false;$('#parent-options').hidden=true;$('#gate-answer').value='';$('#gate-error').textContent='';$('#parent').showModal();};
+$('#settings').onclick=()=>{$('#reset-confirmation').hidden=true;$('#reset-progress').hidden=false;$('#reset-result').textContent='';const a=4+Math.floor(Math.random()*5),b=3+Math.floor(Math.random()*6);challengeAnswer=a+b;$('#challenge').textContent=`${a} + ${b}`;$('#parent-gate').hidden=false;$('#parent-options').hidden=true;$('#gate-answer').value='';$('#gate-error').textContent='';$('#parent').showModal();};
 $('#gate-form').onsubmit=e=>{e.preventDefault();if(Number($('#gate-answer').value)!==challengeAnswer){$('#gate-error').textContent='Réessaie.';return;}$('#parent-gate').hidden=true;$('#parent-options').hidden=false;$('#level').value=state.difficulty;renderDifficulty();renderRanks();$('#sound').checked=state.sound;$('#motion').checked=state.motion;};
 function renderRanks(){const rank=rankFor(state.score);$('#rank-summary').textContent=rank===15?`${state.score} étoiles · dernier palier atteint !`:`${state.score} étoiles · palier ${rank}/15 · encore ${RANK_THRESHOLDS[rank]-state.score} étoiles avant le suivant.`;$('#rank-rows').replaceChildren(...RANK_THRESHOLDS.map((points,i)=>{const row=document.createElement('tr');const level=document.createElement('th'),name=document.createElement('td'),threshold=document.createElement('td');level.textContent=String(i+1);name.textContent=names[i]+(rank===i+1?' · actuel':'');threshold.textContent=String(points);row.append(level,name,threshold);return row;}));}
 function renderDifficulty(){const p=profile();$('#difficulty-summary').textContent=`${p.letters} lettres proposées · ${p.numbers} chiffres proposés · ${p.memoryPairs} paires (${p.memoryPairs*2} cartes) · quantités de 1 à ${p.maxQuantity}.`;}
@@ -61,7 +77,7 @@ render();
 
 function startMemory(){
   clearTimeout(memoryTimer);clearTimeout(turnTimer);clearQuestionTransition();
-  activeActivity='memory';document.body.classList.add('memory-active');$('#welcome').hidden=true;$('#game').hidden=true;$('#memory').hidden=false;$('#memory-finish').hidden=true;
+  activeActivity='memory';document.body.classList.remove('numbers-active');document.body.classList.add('memory-active');$('#welcome').hidden=true;$('#game').hidden=true;$('#memory').hidden=false;$('#memory-finish').hidden=true;
   streak=0;memoryStartScore=state.score;memoryBoard=createMemory(profile().memoryPairs);window.scrollTo(0,0);
   const board=$('#memory-board');board.dataset.pairs=memoryBoard.pairs;
   board.replaceChildren(...memoryBoard.cards.map((card,index)=>{
@@ -102,3 +118,15 @@ function fitMemoryScreen(){
 window.addEventListener('resize',fitMemoryScreen);
 window.visualViewport?.addEventListener('resize',fitMemoryScreen);
 if('ResizeObserver'in window)new ResizeObserver(fitMemoryScreen).observe($('#memory-board'));
+
+function fitNumberScreen(){if(!$('#game').hidden&&activeActivity==='numbers')document.documentElement.style.setProperty('--numbers-viewport',(window.visualViewport?.height||window.innerHeight)+'px');}
+window.addEventListener('resize',fitNumberScreen);window.visualViewport?.addEventListener('resize',fitNumberScreen);
+
+$('#reset-progress').onclick=()=>{$('#reset-confirmation').hidden=false;$('#reset-progress').hidden=true;$('#reset-result').textContent='';$('#reset-cancel').focus();};
+$('#reset-cancel').onclick=()=>{$('#reset-confirmation').hidden=true;$('#reset-progress').hidden=false;$('#reset-progress').focus();};
+$('#reset-confirm').onclick=()=>{
+  clearTimeout(turnTimer);clearTimeout(memoryTimer);clearTimeout(evolutionTimer);clearQuestionTransition();if($('#evolution').open)$('#evolution').close();if('speechSynthesis'in window)speechSynthesis.cancel();
+  state.score=0;streak=0;completed=0;save();
+  if(!activePage().hidden){if(activeActivity==='memory')startMemory();else startListeningActivity(activeActivity);}else render();
+  renderRanks();$('#reset-confirmation').hidden=true;$('#reset-progress').hidden=false;$('#reset-result').textContent='Progression remise à zéro : 0 étoile, palier 1.';$('#reset-progress').focus();
+};
