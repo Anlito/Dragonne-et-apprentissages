@@ -1,20 +1,22 @@
+import {fingerMarkup} from './hands.mjs';
+import {PROFILES_KEY,PROFILE_IDS,PROFILE_META,loadProfiles} from './profiles.mjs';
 import {createEvolutionGate} from './evolution.mjs';
 import {COUNT_OBJECTS,DICE_PIPS,countingQuestion} from './counting.mjs';
 import {ANIMALS,createMemory,flipMemory,settleMemory,memoryLayout} from './memory.mjs';
 import {award,rankFor,question,numberQuestion,DIFFICULTIES,difficultyFor,RANK_THRESHOLDS,POINTS_PER_RANK,parsePoints} from './engine.mjs';
 const $=s=>document.querySelector(s), $$=s=>document.querySelectorAll(s);
-const key='dragonne-v1';
-let state={score:0,difficulty:'easy',sound:true,motion:true};
-try{const saved=JSON.parse(localStorage.getItem(key));if(saved){state.score=Number.isFinite(saved.score)?Math.max(0,Math.floor(saved.score)):0;state.difficulty=difficultyFor(saved);state.sound=saved.sound!==false;state.motion=saved.motion!==false;}}catch{}
+function readSaved(key){try{return JSON.parse(localStorage.getItem(key));}catch{return null;}}
+const accounts=loadProfiles(readSaved(PROFILES_KEY),readSaved('dragonne-v1'));
+let activeId=accounts.activeId,state=accounts.profiles[activeId],profileChosen=false;
+const rankNames=()=>PROFILE_META[activeId].ranks;
 const profile=()=>DIFFICULTIES[state.difficulty];
 let activeActivity='letters', memoryBoard=null, memoryTimer, memoryStartScore=0, afterCelebration;
 const activePage=()=>activeActivity==='memory'?$('#memory'):$('#game');
 let evolutionGate=null;
 let streak=0, completed=0, current=null, mistakes=0, locked=false, turnTimer, evolutionTimer, toastTimer, challengeAnswer, deferredInstall;
-const names=['Petite aventurière','Petite exploratrice','Première cape','Jeune écuyère','Écuyère courageuse','Écuyère étoilée','Petite chevalière','Chevalière vaillante','Chevalière du royaume','Gardienne des feuilles','Gardienne des étoiles','Gardienne de la lumière','Chevalière dorée','Héroïne couronnée','Héroïne du soleil'];
-function save(){try{localStorage.setItem(key,JSON.stringify(state));}catch{$('#storage-note').textContent='Le navigateur ne permet pas de conserver la progression. Elle reste disponible pendant cette partie.';}}
-function setDragon(el,rank){const i=rank-1;el.style.backgroundPosition=`${(i%5)*25}% ${Math.floor(i/5)*50}%`;}
-function render(){const rank=rankFor(state.score);$$('[data-score]').forEach(el=>el.textContent=state.score);$$('[data-rank]').forEach(el=>el.textContent=rank);$$('[data-progress]').forEach(el=>el.style.width=`${rank===15?100:(state.score%POINTS_PER_RANK)/POINTS_PER_RANK*100}%`);$$('.dragon').forEach(el=>setDragon(el,rank));$('.rank-label').innerHTML=`${names[rank-1]} · <span data-rank>${rank}</span>/15`;$('#streak').textContent=`Série · ${streak}`;$('#difficulty').textContent=`${profile().label} · ${activeActivity==='counting'?profile().numbers+' choix':activeActivity==='numbers'?profile().numbers+' chiffres':profile().letters+' lettres'}`;document.body.classList.toggle('reduce-motion',!state.motion);}
+function save(){try{accounts.activeId=activeId;accounts.profiles[activeId]=state;localStorage.setItem(PROFILES_KEY,JSON.stringify(accounts));renderProfileChoices();}catch{$('#storage-note').textContent='Le navigateur ne permet pas de conserver la progression. Elle reste disponible pendant cette partie.';}}
+function setDragon(el,rank,id=activeId){el.style.backgroundImage=`url('${PROFILE_META[id].sprite}')`;const i=rank-1;el.style.backgroundPosition=`${(i%5)*25}% ${Math.floor(i/5)*50}%`;}
+function render(){const rank=rankFor(state.score);$$('[data-score]').forEach(el=>el.textContent=state.score);$$('[data-rank]').forEach(el=>el.textContent=rank);$$('[data-progress]').forEach(el=>el.style.width=`${rank===15?100:(state.score%POINTS_PER_RANK)/POINTS_PER_RANK*100}%`);$$('.dragon').forEach(el=>setDragon(el,rank));$('.rank-label').innerHTML=`${rankNames()[rank-1]} · <span data-rank>${rank}</span>/15`;$('#streak').textContent=`Série · ${streak}`;$('#difficulty').textContent=`${profile().label} · ${activeActivity==='counting'?profile().numbers+' choix':activeActivity==='numbers'?profile().numbers+' choix':profile().letters+' lettres'}`;document.body.classList.toggle('reduce-motion',!state.motion);document.body.dataset.profile=activeId;$$('.dragon').forEach(el=>el.setAttribute('aria-label',PROFILE_META[activeId].companion));setDragon($('.profile-avatar'),rank);$('#profile-toggle').setAttribute('aria-label','Changer de profil, '+PROFILE_META[activeId].label);$('#greet').setAttribute('aria-label','Écouter '+(activeId==='dragon'?'le dragon':'la dragonne'));$('#evolution-title').textContent=PROFILE_META[activeId].companion+' grandit !';renderProfileChoices();}
 function say(text,done){
   let finished=false;const finish=()=>{if(finished)return;finished=true;done?.();};
   if(!state.sound||!('speechSynthesis'in window)){finish();return;}
@@ -28,14 +30,16 @@ function next(){
   if($('#game').hidden)return;clearQuestionTransition();$('#game').classList.remove('question-enter');void $('#game').offsetWidth;$('#game').classList.add('question-enter');locked=false;mistakes=0;
   const numeric=activeActivity==='numbers'||activeActivity==='counting';current=activeActivity==='counting'?countingQuestion(profile().numbers,current?.target):numeric?numberQuestion(profile().numbers,current?.target):question(profile().letters,current?.target);if(activeActivity==='counting')renderCounting();
   $('#choices').classList.toggle('alphabet',!numeric&&profile().letters>=13);$('#choices').classList.toggle('numberpad',numeric);
-  const values=numeric?Array.from({length:activeActivity==='counting'?profile().maxQuantity:9},(_,i)=>i+1):current.choices;
+  const fingerAnswers=numeric&&state.difficulty!=='hard';
+  $('#choices').classList.toggle('fingerpad',fingerAnswers);$('#choices').style.setProperty('--answer-rows',fingerAnswers?Math.ceil(profile().numbers/3):3);
+  const values=fingerAnswers?current.choices:numeric?Array.from({length:activeActivity==='counting'?profile().maxQuantity:9},(_,i)=>i+1):current.choices;
   $('#choices').replaceChildren(...values.map(value=>{
     if(numeric&&!current.choices.includes(value)){const gap=document.createElement('span');gap.className='number-space';gap.setAttribute('aria-hidden','true');return gap;}
-    const el=document.createElement('button');el.className=numeric?'letter number-key':'letter';el.textContent=value;el.setAttribute('aria-label',(numeric?'Chiffre ':'Lettre ')+value);el.onclick=()=>choose(value,el);return el;
+    const el=document.createElement('button');el.className=numeric?'letter number-key':'letter';if(fingerAnswers){el.classList.add('finger-choice');el.innerHTML=fingerMarkup(value)+(state.difficulty==='medium'?'<span class="answer-digit">'+value+'</span>':'');el.setAttribute('aria-label',value+(value===1?' doigt':' doigts')+(state.difficulty==='medium'?' et chiffre '+value:''));}else{el.textContent=value;el.setAttribute('aria-label',(numeric?'Chiffre ':'Lettre ')+value);}el.onclick=()=>choose(value,el);return el;
   }));
   $('#feedback').textContent='Prends ton temps, tu peux réécouter.';dots();listen();
 }
-function choose(letter,el){if(locked||el.disabled)return;if(letter!==current.target){mistakes++;streak=0;el.classList.add('removed');el.disabled=true;el.setAttribute('aria-hidden','true');$('#feedback').textContent='Un choix en moins. Essaie encore !';say(activeActivity==='counting'?'Compte encore, puis choisis un chiffre.':`Essaie encore. Trouve ${activeActivity==='numbers'?'le chiffre':'la lettre'} ${current.target}.`);render();return;}locked=true;el.classList.add('correct');const oldRank=rankFor(state.score),result=award(state.score,streak,mistakes);state.score=result.score;streak=result.streak;completed++;save();render();dots();$('#feedback').textContent=`Bravo ! +${result.points} ${result.points===1?'étoile':'étoiles'}${result.bonus?' et +5 de bonus':''} !`;chime();say(result.bonus?'Bravo ! Tu gagnes un bonus !':'Bravo, tu as trouvé !');celebrateQuestion(result,rankFor(state.score)>oldRank);}
+function choose(letter,el){if(locked||el.disabled)return;if(letter!==current.target){mistakes++;streak=0;el.classList.add('removed');el.disabled=true;el.setAttribute('aria-hidden','true');$('#feedback').textContent='Un choix en moins. Essaie encore !';say(activeActivity==='counting'?'Compte encore, puis choisis la bonne réponse.':`Essaie encore. Trouve ${activeActivity==='numbers'?'le chiffre':'la lettre'} ${current.target}.`);render();return;}locked=true;el.classList.add('correct');const oldRank=rankFor(state.score),result=award(state.score,streak,mistakes);state.score=result.score;streak=result.streak;completed++;save();render();dots();$('#feedback').textContent=`Bravo ! +${result.points} ${result.points===1?'étoile':'étoiles'}${result.bonus?' et +5 de bonus':''} !`;chime();say(result.bonus?'Bravo ! Tu gagnes un bonus !':'Bravo, tu as trouvé !');celebrateQuestion(result,rankFor(state.score)>oldRank);}
 function clearQuestionTransition(){
   $('#question-transition').hidden=true;
   $('#question-transition').classList.remove('leaving');
@@ -58,10 +62,10 @@ function finishQuestionTransition(evolves){
 }
 function showEvolution(preview){
   clearTimeout(turnTimer);clearTimeout(evolutionTimer);evolutionGate?.stop();
-  const dialog=$('#evolution');dialog.dataset.preview=String(preview);$('#evolution-rank').textContent=`${names[rankFor(state.score)-1]} · Palier ${rankFor(state.score)}`;dialog.showModal();
+  const dialog=$('#evolution');dialog.dataset.preview=String(preview);$('#evolution-rank').textContent=`${rankNames()[rankFor(state.score)-1]} · Palier ${rankFor(state.score)}`;dialog.showModal();
   const dragon=dialog.querySelector('.dragon');dragon.style.animation='none';void dragon.offsetWidth;dragon.style.animation='';chime(true);
   const gate=createEvolutionGate({minDuration:state.motion?3400:1400,onComplete:()=>{if(evolutionGate===gate&&dialog.open)closeEvolution();}});evolutionGate=gate;
-  say('Ta dragonne grandit ! Quelle belle aventure !',()=>{if(evolutionGate!==gate||!dialog.open)return;evolutionTimer=setTimeout(()=>gate.speechFinished(),350);});
+  say(PROFILE_META[activeId].companion+' grandit ! Quelle belle aventure !',()=>{if(evolutionGate!==gate||!dialog.open)return;evolutionTimer=setTimeout(()=>gate.speechFinished(),350);});
 }
 function closeEvolution(){
   clearTimeout(evolutionTimer);evolutionGate?.stop();evolutionGate=null;const dialog=$('#evolution');if(!dialog.open)return;
@@ -75,13 +79,15 @@ function startListeningActivity(kind){
   render();next();fitNumberScreen();
 }
 $('#letters').onclick=()=>startListeningActivity('letters');$('#numbers-start').onclick=()=>startListeningActivity('numbers');$('#counting-start').onclick=()=>startListeningActivity('counting');
-$('#home').onclick=()=>{document.body.classList.remove('memory-active','numbers-active','counting-active');clearTimeout(turnTimer);clearTimeout(memoryTimer);$('#memory').hidden=true;clearQuestionTransition();if('speechSynthesis'in window)speechSynthesis.cancel();$('#game').hidden=true;$('#welcome').hidden=false;window.scrollTo(0,0);current=null;locked=false;};
-$('#listen').onclick=listen;$('#greet').onclick=()=>say('Coucou ! Je suis ta dragonne. Viens jouer avec moi !');
+function returnHome(){clearTimeout(evolutionTimer);evolutionGate?.stop();evolutionGate=null;if($('#evolution').open)$('#evolution').close();document.body.classList.remove('memory-active','numbers-active','counting-active');clearTimeout(turnTimer);clearTimeout(memoryTimer);$('#memory').hidden=true;clearQuestionTransition();if('speechSynthesis'in window)speechSynthesis.cancel();$('#game').hidden=true;$('#welcome').hidden=false;window.scrollTo(0,0);current=null;locked=false;streak=0;completed=0;afterCelebration=null;render();}
+$('#home').onclick=returnHome;
+$('#listen').onclick=listen;$('#greet').onclick=()=>say(activeId==='dragon'?'Coucou ! Je suis ton dragon. Viens jouer avec moi !':'Coucou ! Je suis ta dragonne. Viens jouer avec moi !');
 $$('[data-soon]').forEach(el=>el.onclick=()=>{toast('Cette activité arrive bientôt !');say(`${el.dataset.soon} arrive bientôt. Tu peux jouer aux lettres !`);});
 $('#settings').onclick=()=>{$('#reset-confirmation').hidden=true;$('#reset-progress').hidden=false;$('#reset-result').textContent='';const a=4+Math.floor(Math.random()*5),b=3+Math.floor(Math.random()*6);challengeAnswer=a+b;$('#challenge').textContent=`${a} + ${b}`;$('#parent-gate').hidden=false;$('#parent-options').hidden=true;$('#gate-answer').value='';$('#gate-error').textContent='';$('#parent').showModal();};
-$('#gate-form').onsubmit=e=>{e.preventDefault();if(Number($('#gate-answer').value)!==challengeAnswer){$('#gate-error').textContent='Réessaie.';return;}$('#parent-gate').hidden=true;$('#parent-options').hidden=false;$('#level').value=state.difficulty;$('#manual-points').value=state.score;$('#points-result').textContent='';previewPoints();renderDifficulty();renderRanks();$('#sound').checked=state.sound;$('#motion').checked=state.motion;};
-function renderRanks(){const rank=rankFor(state.score);$('#rank-summary').textContent=rank===15?`${state.score} étoiles · dernier palier atteint !`:`${state.score} étoiles · palier ${rank}/15 · encore ${RANK_THRESHOLDS[rank]-state.score} étoiles avant le suivant.`;$('#rank-rows').replaceChildren(...RANK_THRESHOLDS.map((points,i)=>{const row=document.createElement('tr');const level=document.createElement('th'),name=document.createElement('td'),threshold=document.createElement('td');level.textContent=String(i+1);name.textContent=names[i]+(rank===i+1?' · actuel':'');threshold.textContent=String(points);row.append(level,name,threshold);return row;}));}
-function renderDifficulty(){const p=profile();$('#difficulty-summary').textContent=`${p.letters} lettres proposées · ${p.numbers} chiffres proposés · ${p.memoryPairs} paires (${p.memoryPairs*2} cartes) · quantités de 1 à 9 avec ${p.numbers} propositions.`;}
+$('#gate-form').onsubmit=e=>{e.preventDefault();if(Number($('#gate-answer').value)!==challengeAnswer){$('#gate-error').textContent='Réessaie.';return;}$('#parent-gate').hidden=true;$('#parent-options').hidden=false;renderParentSettings();};
+function renderParentSettings(){$('#reset-confirmation').hidden=true;$('#reset-progress').hidden=false;$('#reset-result').textContent='';$('#parent-profile').value=activeId;$('#parent-profile-note').textContent='Réglages et progression de '+PROFILE_META[activeId].label+' uniquement.';$('#level').value=state.difficulty;$('#manual-points').value=state.score;$('#points-result').textContent='';previewPoints();renderDifficulty();renderRanks();$('#sound').checked=state.sound;$('#motion').checked=state.motion;}
+function renderRanks(){const rank=rankFor(state.score);$('#rank-summary').textContent=rank===15?`${state.score} étoiles · dernier palier atteint !`:`${state.score} étoiles · palier ${rank}/15 · encore ${RANK_THRESHOLDS[rank]-state.score} étoiles avant le suivant.`;$('#rank-rows').replaceChildren(...RANK_THRESHOLDS.map((points,i)=>{const row=document.createElement('tr');const level=document.createElement('th'),name=document.createElement('td'),threshold=document.createElement('td');level.textContent=String(i+1);name.textContent=rankNames()[i]+(rank===i+1?' · actuel':'');threshold.textContent=String(points);row.append(level,name,threshold);return row;}));}
+function renderDifficulty(){const p=profile();$('#difficulty-summary').textContent=`${p.letters} lettres proposées · ${p.numbers} réponses en nombres (${state.difficulty==='easy'?'doigts':state.difficulty==='medium'?'doigts et chiffres':'chiffres'}) · ${p.memoryPairs} paires (${p.memoryPairs*2} cartes) · quantités de 1 à 9 avec ${p.numbers} propositions.`;}
 $('#level').onchange=e=>{state.difficulty=e.target.value;save();render();renderDifficulty();if(!activePage().hidden){clearTimeout(turnTimer);clearQuestionTransition();if(activeActivity==='memory')startMemory();else next();}};
 $('#sound').onchange=e=>{state.sound=e.target.checked;if(!state.sound&&'speechSynthesis'in window)speechSynthesis.cancel();save();};
 $('#motion').onchange=e=>{state.motion=e.target.checked;save();render();};
@@ -146,7 +152,7 @@ function applyPoints(points){
   if(!activePage().hidden){if(activeActivity==='memory')startMemory();else startListeningActivity(activeActivity);}else render();
   renderRanks();$('#manual-points').value=state.score;previewPoints();
 }
-$('#reset-confirm').onclick=()=>{applyPoints(0);$('#reset-confirmation').hidden=true;$('#reset-progress').hidden=false;$('#reset-result').textContent='Progression remise à zéro : 0 étoile, palier 1.';$('#points-result').textContent='';$('#reset-progress').focus();};
+$('#reset-confirm').onclick=()=>{applyPoints(0);$('#reset-confirmation').hidden=true;$('#reset-progress').hidden=false;$('#reset-result').textContent='Progression de ce profil remise à zéro : 0 étoile, palier 1.';$('#points-result').textContent='';$('#reset-progress').focus();};
 function renderCounting(){
   const board=$('#count-board');board.replaceChildren();$('#choices').style.setProperty('--answer-rows',Math.ceil(profile().maxQuantity/3));
   if(current.kind==='dice'){
@@ -158,6 +164,22 @@ function renderCounting(){
   }
 }
 
-function previewPoints(){const points=parsePoints($('#manual-points').value);$('#points-preview').textContent=points===null?'Indique un nombre entier positif ou nul.':points+' étoiles · palier '+rankFor(points)+'/15 · '+names[rankFor(points)-1];}
+function previewPoints(){const points=parsePoints($('#manual-points').value);$('#points-preview').textContent=points===null?'Indique un nombre entier positif ou nul.':points+' étoiles · palier '+rankFor(points)+'/15 · '+rankNames()[rankFor(points)-1];}
 $('#manual-points').oninput=previewPoints;
-$('#points-form').onsubmit=event=>{event.preventDefault();const points=parsePoints($('#manual-points').value);if(points===null){$('#points-result').textContent='Indique un nombre entier positif ou nul.';return;}applyPoints(points);$('#points-result').textContent=points+' étoiles enregistrées sur cet appareil. Palier '+rankFor(points)+'/15.';$('#reset-result').textContent='';};
+$('#points-form').onsubmit=event=>{event.preventDefault();const points=parsePoints($('#manual-points').value);if(points===null){$('#points-result').textContent='Indique un nombre entier positif ou nul.';return;}applyPoints(points);$('#points-result').textContent=points+' étoiles enregistrées pour '+PROFILE_META[activeId].label+'. Palier '+rankFor(points)+'/15.';$('#reset-result').textContent='';};
+
+function renderProfileChoices(){
+  for(const id of PROFILE_IDS){const card=$('.profile-card[data-profile="'+id+'"]'),child=accounts.profiles[id];setDragon(card.querySelector('.profile-dragon'),rankFor(child.score),id);card.querySelector('.profile-score').textContent='★ '+child.score+' · Palier '+rankFor(child.score);card.querySelector('.profile-level').textContent=DIFFICULTIES[child.difficulty].label;card.classList.toggle('selected',profileChosen&&id===activeId);}
+}
+function selectProfile(id){
+  if(!PROFILE_IDS.includes(id))return;
+  save();returnHome();activeId=id;accounts.activeId=id;state=accounts.profiles[id];profileChosen=true;memoryBoard=null;save();render();
+  if($('#profiles').open)$('#profiles').close();
+  if($('#parent').open)renderParentSettings();
+}
+$('#profile-toggle').onclick=()=>{returnHome();renderProfileChoices();$('#profiles-back').hidden=!profileChosen;$('#profiles').showModal();};
+$$('.profile-card[data-profile]').forEach(button=>button.onclick=()=>selectProfile(button.dataset.profile));
+$('#profiles-back').onclick=()=>$('#profiles').close();
+$('#profiles').addEventListener('cancel',event=>{if(!profileChosen)event.preventDefault();});
+$('#parent-profile').onchange=event=>selectProfile(event.target.value);
+renderProfileChoices();$('#profiles').showModal();

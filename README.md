@@ -1,4 +1,4 @@
-# Dragonne & découvertes
+# Dragons & découvertes
 
 Première version de la PWA Android « Dragonne-et-apprentissages », pensée pour une enfant de 4 ans. Univers de papier découpé, dragonne chevalière et commandes visuelles avec voix française.
 
@@ -8,8 +8,8 @@ Première version de la PWA Android « Dragonne-et-apprentissages », pensée po
 - Lettres majuscules A–Z et consigne vocale réécoutable. Le coin parent propose un niveau global : **Facile** (6 lettres), **Moyen** (13 lettres), **Difficile** (26 lettres). Facile est le réglage par défaut. Une grille compacte est utilisée à partir de 13 lettres.
 - Le même profil définit le memory avec 4 / 8 / 16 paires (8 / 16 / 32 cartes), les chiffres avec 3 / 6 / 9 choix et le comptage de 1 à 9 à tous les niveaux, avec 3 / 6 / 9 réponses proposées. Le tableau du coin parent expose ces valeurs.
 - Comptage : une quantité exacte de pommes, étoiles, pierres précieuses ou fleurs en papier découpé apparaît. La voix demande combien il y en a, sans annoncer la réponse. Certaines questions présentent un dé avec 1 à 6 points ; les quantités 7 à 9 utilisent toujours des objets. Le haut-parleur répète la question. Le chiffre demandé ne se répète pas immédiatement.
-- Comptage : pavé 1–2–3 / 4–5–6 / 7–8–9 stable, avec 3 chiffres proposés en Facile, 6 en Moyen et 9 en Difficile. Les objets vont toujours de 1 à 9 ; la bonne réponse est incluse et les autres propositions sont distinctes. Les positions non proposées restent vides. Une erreur retire seulement le mauvais chiffre et invite à recompter sans révéler la quantité. Points 10 / 5 / 1, bonus, sauvegarde et transitions sont partagés avec les autres activités.
-- Chiffres : une voix française demande un chiffre de 1 à 9. Trois, six ou neuf choix distincts sont tirés selon la difficulté. La bonne réponse fait toujours partie des choix ; le chiffre demandé ne se répète pas immédiatement. Le pavé garde la disposition 1–2–3 / 4–5–6 / 7–8–9, avec des emplacements vides pour les chiffres non proposés. Le haut-parleur permet de réécouter.
+- Comptage : 3 réponses avec doigts seuls en Facile, 6 avec doigts et chiffre en Moyen, 9 chiffres seuls en Difficile. Les objets vont toujours de 1 à 9 ; la bonne réponse est incluse et les autres propositions sont distinctes. Les positions non proposées restent vides. Une erreur retire seulement le mauvais chiffre et invite à recompter sans révéler la quantité. Points 10 / 5 / 1, bonus, sauvegarde et transitions sont partagés avec les autres activités.
+- Chiffres : une voix française demande un chiffre de 1 à 9. Trois, six ou neuf choix distincts sont tirés selon la difficulté. La bonne réponse fait toujours partie des choix ; le chiffre demandé ne se répète pas immédiatement. Facile montre 3 réponses en doigts uniquement ; Moyen montre 6 réponses avec doigts et chiffre ; Difficile montre les 9 chiffres dans le pavé habituel. Le haut-parleur permet de réécouter.
 - Chiffres : après une erreur, seul le mauvais choix disparaît sans déplacer les touches. Barème commun 10 / 5 / 1, bonus de série, étoiles sauvegardées, pause de réussite et transformations à chaque tranche de 300 points. Mise en page ajustée à la hauteur du téléphone, en portrait et paysage, avec texture de papier sur les touches.
 - Memory : 16 animaux en papier découpé, choisis et mélangés à chaque partie. Toucher deux cartes ; une mauvaise paire reste visible 1,5 seconde puis se retourne. Les paires trouvées restent visibles à leur place. Aucun chronomètre ni limite de tentatives.
 - Grille ajustée à la largeur et à la hauteur réellement disponibles, y compris les barres du navigateur Android : nombre de colonnes choisi automatiquement (4 ou 8 pour 32 cartes), hauteur de cartes flexible, marges compactes sur petits écrans et décor de bas de page masqué pendant le memory. Changer d’orientation recalcule la grille sans mélanger les animaux. Le panneau de fin se superpose à la grille pour ne pas créer de défilement.
@@ -94,3 +94,12 @@ Dépôt : https://github.com/Anlito/Dragonne-et-apprentissages. Hébergement pr�
 Développer l’atelier photo. Finaliser les personnages transparents, les voix hors connexion et vérifier les petits écrans ainsi que les orientations sur appareils réels. Aucune caméra n’est activée dans cette version.
 
 La synthèse vocale utilise les voix françaises disponibles dans le navigateur ; sa disponibilité hors connexion dépend du système. Le mode muet désactive les consignes parlées : réactiver la voix pour l’exercice d’écoute.
+
+## Deux profils et réponses en doigts
+
+- Choix visuel Dragonne / Dragon à chaque ouverture et changement via le portrait de l’en-tête. Chaque enfant possède ses points, son évolution parmi 15 apparences, sa difficulté, son et animations.
+- Migration automatique de la sauvegarde historique vers Dragonne ; Dragon démarre à zéro en Facile. Les deux profils restent locaux à cet appareil, sans connexion ni synchronisation cloud. La saisie manuelle des points et la remise à zéro concernent uniquement le profil sélectionné dans le coin parent.
+- Chiffres et Je compte : Facile = 3 mains sans chiffres ; Moyen = 6 mains avec chiffres ; Difficile = 9 chiffres seuls. Les nombres vont toujours de 1 à 9. De 6 à 9, deux mains montrent 5 + les doigts restants. Les mauvaises réponses disparaissent sans déplacer les autres.
+- Mains SVG déterministes dans `hands.mjs` : nombres de doigts exacts, pouce d’abord. Atlas du dragon bleu et or dans `assets/dragon.png`, généré à partir de la dragonne comme référence de style papier découpé, même grille de 15 évolutions.
+- Sauvegarde : `profiles.mjs`, clé `dragonne-profiles-v1`. L’ancienne clé reste intacte. Cache PWA v17 incluant les nouveaux modules et le dragon.
+- Vérifications : suites moteur, memory, comptage, évolution, migration et indépendance des profils, exactitude de 1 à 9 doigts ; contrôle visuel téléphone des deux représentations, changement de profil et persistance après rechargement.
