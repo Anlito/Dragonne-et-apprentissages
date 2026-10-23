@@ -15,6 +15,7 @@ Première version de la PWA Android « Dragonne-et-apprentissages », pensée po
 - Le coin parent affiche les 15 seuils cumulés (0, 300, 600… 4 200 étoiles), le palier actuel et les étoiles restantes avant l’évolution suivante. Depuis zéro, le palier 15 demande 360 réponses parfaites avec bonus, 840 questions à une faute chacune ou 4 200 à deux fautes ou plus chacune. Les seuils ont été triplés. Les étoiles acquises sont conservées ; le palier et la jauge sont recalculés selon les nouveaux seuils.
 - Progression et réglages conservés dans le stockage du navigateur sur l’appareil. Aucun compte ni transfert de progression.
 - Mise en page portrait et paysage, téléphone et tablette. Cache hors connexion après un premier chargement réussi. Installation Android depuis le menu du navigateur.
+- Actualisation PWA : en ligne, les ressources sont récupérées sur le réseau et rafraîchissent le cache ; hors connexion, la copie enregistrée prend le relais. Le préchargement d’une nouvelle version contourne le cache HTTP pour éviter de conserver une ancienne échelle de progression.
 - Coin parent derrière un petit calcul ; il évite les ouvertures accidentelles mais ne constitue pas un contrôle de sécurité.
 
 ## Modifier le projet
