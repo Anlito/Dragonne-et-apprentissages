@@ -14,13 +14,32 @@ let audio;function chime(big=false){if(!state.sound)return;try{audio??=new(windo
 function toast(text){clearTimeout(toastTimer);$('#toast').textContent=text;$('#toast').hidden=false;toastTimer=setTimeout(()=>$('#toast').hidden=true,2600);}
 function listen(){if(!current)return;if(!state.sound){$('#voice-note').textContent='La voix est désactivée dans le coin parent.';return;}if(!('speechSynthesis'in window)){$('#voice-note').textContent='La voix n’est pas disponible dans ce navigateur.';return;}say(`Trouve la lettre ${current.target}.`);$('#voice-note').textContent='Tu peux réécouter autant que tu veux.';}
 function dots(){$('#session-dots').replaceChildren(...Array.from({length:10},(_,i)=>{const el=document.createElement('i');if(i<completed%10||(completed>0&&completed%10===0))el.className='done';return el;}));}
-function next(){if($('#game').hidden)return;locked=false;mistakes=0;current=question(profile().letters,current?.target);$('#choices').classList.toggle('alphabet',profile().letters>=13);$('#choices').replaceChildren(...current.choices.map(letter=>{const el=document.createElement('button');el.className='letter';el.textContent=letter;el.setAttribute('aria-label',`Lettre ${letter}`);el.onclick=()=>choose(letter,el);return el;}));$('#feedback').textContent='Prends ton temps, tu peux réécouter.';dots();listen();}
-function choose(letter,el){if(locked||el.disabled)return;if(letter!==current.target){mistakes++;streak=0;el.classList.add('removed');el.disabled=true;el.setAttribute('aria-hidden','true');$('#feedback').textContent='Un choix en moins. Essaie encore !';say(`Essaie encore. Trouve la lettre ${current.target}.`);render();return;}locked=true;el.classList.add('correct');const oldRank=rankFor(state.score),result=award(state.score,streak,mistakes);state.score=result.score;streak=result.streak;completed++;save();render();dots();$('#feedback').textContent=`Bravo ! +${result.points} ${result.points===1?'étoile':'étoiles'}${result.bonus?' et +5 de bonus':''} !`;chime();say(result.bonus?'Bravo ! Tu gagnes un bonus !':'Bravo, tu as trouvé !');if(rankFor(state.score)>oldRank){turnTimer=setTimeout(()=>showEvolution(false),650);}else{turnTimer=setTimeout(next,1600);}}
+function next(){if($('#game').hidden)return;clearQuestionTransition();$('#game').classList.remove('question-enter');void $('#game').offsetWidth;$('#game').classList.add('question-enter');locked=false;mistakes=0;current=question(profile().letters,current?.target);$('#choices').classList.toggle('alphabet',profile().letters>=13);$('#choices').replaceChildren(...current.choices.map(letter=>{const el=document.createElement('button');el.className='letter';el.textContent=letter;el.setAttribute('aria-label',`Lettre ${letter}`);el.onclick=()=>choose(letter,el);return el;}));$('#feedback').textContent='Prends ton temps, tu peux réécouter.';dots();listen();}
+function choose(letter,el){if(locked||el.disabled)return;if(letter!==current.target){mistakes++;streak=0;el.classList.add('removed');el.disabled=true;el.setAttribute('aria-hidden','true');$('#feedback').textContent='Un choix en moins. Essaie encore !';say(`Essaie encore. Trouve la lettre ${current.target}.`);render();return;}locked=true;el.classList.add('correct');const oldRank=rankFor(state.score),result=award(state.score,streak,mistakes);state.score=result.score;streak=result.streak;completed++;save();render();dots();$('#feedback').textContent=`Bravo ! +${result.points} ${result.points===1?'étoile':'étoiles'}${result.bonus?' et +5 de bonus':''} !`;chime();say(result.bonus?'Bravo ! Tu gagnes un bonus !':'Bravo, tu as trouvé !');celebrateQuestion(result,rankFor(state.score)>oldRank);}
+function clearQuestionTransition(){
+  $('#question-transition').hidden=true;
+  $('#question-transition').classList.remove('leaving');
+  $('#game').classList.remove('celebrating');
+}
+function celebrateQuestion(result,evolves){
+  $('#game').classList.remove('question-enter');
+  $('#reward-points').textContent='+'+(result.points+result.bonus);
+  $('#reward-caption').textContent=result.bonus?'Étoiles et bonus !':result.points===1?'Une étoile gagnée !':'Étoiles gagnées !';
+  $('#question-transition').hidden=false;
+  $('#game').classList.add('celebrating');
+  turnTimer=setTimeout(()=>finishQuestionTransition(evolves),2200);
+}
+function finishQuestionTransition(evolves){
+  if($('#game').hidden){clearQuestionTransition();return;}
+  if($('#parent').open){turnTimer=setTimeout(()=>finishQuestionTransition(evolves),300);return;}
+  $('#question-transition').classList.add('leaving');
+  turnTimer=setTimeout(()=>{clearQuestionTransition();if(evolves)showEvolution(false);else next();},state.motion?300:0);
+}
 function showEvolution(preview){clearTimeout(turnTimer);const dialog=$('#evolution');dialog.dataset.preview=String(preview);$('#evolution-rank').textContent=`${names[rankFor(state.score)-1]} · Palier ${rankFor(state.score)}`;dialog.showModal();const dragon=dialog.querySelector('.dragon');dragon.style.animation='none';void dragon.offsetWidth;dragon.style.animation='';chime(true);say('Ta dragonne grandit ! Quelle belle aventure !');clearTimeout(evolutionTimer);evolutionTimer=setTimeout(closeEvolution,state.motion?3400:1400);}
 function closeEvolution(){clearTimeout(evolutionTimer);const dialog=$('#evolution');const preview=dialog.dataset.preview==='true';dialog.close();if(!preview&&!$('#game').hidden)next();}
 $('#skip-evolution').onclick=closeEvolution;$('#evolution').addEventListener('cancel',e=>{e.preventDefault();closeEvolution();});
 $('#letters').onclick=()=>{$('#welcome').hidden=true;$('#game').hidden=false;window.scrollTo(0,0);streak=0;completed=0;render();next();};
-$('#home').onclick=()=>{clearTimeout(turnTimer);if('speechSynthesis'in window)speechSynthesis.cancel();$('#game').hidden=true;$('#welcome').hidden=false;window.scrollTo(0,0);current=null;locked=false;};
+$('#home').onclick=()=>{clearTimeout(turnTimer);clearQuestionTransition();if('speechSynthesis'in window)speechSynthesis.cancel();$('#game').hidden=true;$('#welcome').hidden=false;window.scrollTo(0,0);current=null;locked=false;};
 $('#listen').onclick=listen;$('#greet').onclick=()=>say('Coucou ! Je suis ta dragonne. Viens jouer avec moi !');
 $$('[data-soon]').forEach(el=>el.onclick=()=>{toast('Cette activité arrive bientôt !');say(`${el.dataset.soon} arrive bientôt. Tu peux jouer aux lettres !`);});
 $('#settings').onclick=()=>{const a=4+Math.floor(Math.random()*5),b=3+Math.floor(Math.random()*6);challengeAnswer=a+b;$('#challenge').textContent=`${a} + ${b}`;$('#parent-gate').hidden=false;$('#parent-options').hidden=true;$('#gate-answer').value='';$('#gate-error').textContent='';$('#parent').showModal();};

@@ -11,6 +11,8 @@ Première version de la PWA Android « Dragonne-et-apprentissages », pensée po
 - Erreurs sans retrait de points. Chaque erreur retire le choix incorrect ; les autres lettres restent à leur place pour conserver les repères visuels. La bonne réponse reste toujours disponible. Les choix reviennent à la question suivante. Ce principe sera repris pour les chiffres.
 - Récompense selon les erreurs de la question : 10 étoiles sans faute, 5 après une faute, 1 après deux fautes ou plus. Les points déjà acquis ne sont jamais retirés. Le compteur d’erreurs revient à zéro à chaque question.
 - Bonus de 5 étoiles toutes les trois réponses consécutives sans faute. Une faute remet la série à zéro ; une réponse trouvée avec aide ne démarre pas une série.
+- Après chaque question réussie : pause de 2,2 secondes avec un petit panneau Bravo et le gain exact (bonus inclus), étoiles en papier, petit bond de la dragonne puis fondu de 0,3 seconde vers la question suivante. Les réponses sont verrouillées pendant cette pause. Le retour à l’accueil annule la transition. Le coin parent ouvert retarde la suite ; le réglage « Animations et transitions » et la préférence système de mouvement réduit désactivent les effets tout en conservant la pause.
+- Si la réponse déclenche une évolution, la pause de réussite précède la transformation spéciale du personnage.
 - Un palier par tranche de 300 étoiles, jusqu’à 15 apparences. Animation de transformation avec étoiles, carillon et nouvel équipement ; toucher pour continuer. Prévisualisation dans le coin parent.
 - Le coin parent affiche les 15 seuils cumulés (0, 300, 600… 4 200 étoiles), le palier actuel et les étoiles restantes avant l’évolution suivante. Depuis zéro, le palier 15 demande 360 réponses parfaites avec bonus, 840 questions à une faute chacune ou 4 200 à deux fautes ou plus chacune. Les seuils ont été triplés. Les étoiles acquises sont conservées ; le palier et la jauge sont recalculés selon les nouveaux seuils.
 - Progression et réglages conservés dans le stockage du navigateur sur l’appareil. Aucun compte ni transfert de progression.
@@ -35,6 +37,8 @@ Pour tester, servir ce dossier avec un serveur HTTP local ; ne pas ouvrir simple
 ## Vérification
 
 `node check.mjs` vérifie les tirages (600 questions), les bonus, les seuils et la limite des 15 paliers. `node --check app.js` et `node --check sw.js` vérifient la syntaxe.
+
+Transitions vérifiées dans le navigateur : panneau visible avec un gain de +5 puis +10 selon les fautes, arrivée automatique de la question suivante après la pause et panneau masqué immédiatement lors du retour à l’accueil. Les vérifications des points et paliers continuent de passer.
 
 Barème 10/5/1 : vérifications automatiques de zéro, une, deux et plusieurs fautes, exclusion du bonus après aide, franchissement d’un palier avec un seul point, limites des 15 seuils et parcours de 360 réponses parfaites jusqu’à 4 200 points. L’interface utilise la récompense calculée pour afficher le nombre exact d’étoiles gagnées.
 
