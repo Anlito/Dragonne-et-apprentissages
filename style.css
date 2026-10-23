@@ -3,3 +3,5 @@
 .letter.removed{visibility:hidden;pointer-events:none}
 .dragon{clip-path:inset(0 0 15% 0);mask-image:radial-gradient(ellipse 75% 65% at 50% 48%,#000 45%,transparent 85%)}
 @media(max-width:700px){.dragon-button{max-width:165px;top:0;left:0}.companion{min-height:170px}}
+@media(max-width:700px){.companion h1{font-size:28px}}
+@media(max-height:550px) and (orientation:landscape){.activities{gap:10px}.tile{aspect-ratio:1.95}.activity>span:last-child{padding:4px 10px 0}.play{width:23px;height:23px}footer{margin:12px 0 0}}
