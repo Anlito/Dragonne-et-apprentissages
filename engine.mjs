@@ -1,4 +1,13 @@
 export const ALPHABET = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('');
+export const DIFFICULTIES = {
+  easy: {label:'Facile', letters:6, numbers:3, memoryPairs:4, maxQuantity:3},
+  medium: {label:'Moyen', letters:13, numbers:6, memoryPairs:8, maxQuantity:6},
+  hard: {label:'Difficile', letters:26, numbers:9, memoryPairs:16, maxQuantity:9}
+};
+export function difficultyFor(saved) {
+  if(Object.hasOwn(DIFFICULTIES,saved?.difficulty))return saved.difficulty;
+  return saved?.size===26?'hard':saved?.size===13?'medium':'easy';
+}
 export const rankFor = score => Math.min(15, Math.floor(score / 100) + 1);
 export function award(score, streak) { const nextStreak = streak + 1; const bonus = nextStreak % 3 === 0 ? 5 : 0; return {score: score + 10 + bonus, streak: nextStreak, bonus}; }
 export function question(size, previous = '', random = Math.random) {

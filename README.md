@@ -5,7 +5,9 @@ Première version de la PWA Android « Dragonne-et-apprentissages », pensée po
 ## Fonctionnement
 
 - Accueil avec les quatre activités illustrées. Seul le jeu des lettres est jouable à cette étape ; memory, chiffres et quantités sont annoncés comme à venir.
-- Lettres majuscules A–Z, consigne vocale réécoutable, trois choix par défaut. Le coin parent propose aussi six choix et l’alphabet complet.
+- Lettres majuscules A–Z et consigne vocale réécoutable. Le coin parent propose un niveau global : **Facile** (6 lettres), **Moyen** (13 lettres), **Difficile** (26 lettres). Facile est le réglage par défaut. Une grille compacte est utilisée à partir de 13 lettres.
+- Le même profil définit les futures activités : chiffres avec 3 / 6 / 9 choix, memory avec 4 / 8 / 16 paires (8 / 16 / 32 cartes), quantités de 1 à 3 / 6 / 9. Le tableau du coin parent expose ces valeurs. Ces trois activités restent à venir.
+- Les anciens réglages sont migrés sans perdre les étoiles : 3 ou 6 lettres deviennent Facile ; l’alphabet complet devient Difficile. Le niveau global est sauvegardé sur l’appareil et appliqué immédiatement à la partie en cours.
 - Erreurs sans retrait de points. Chaque erreur retire le choix incorrect ; les autres lettres restent à leur place pour conserver les repères visuels. La bonne réponse reste toujours disponible. Les choix reviennent à la question suivante. Ce principe sera repris pour les chiffres.
 - 10 étoiles par bonne réponse et 5 étoiles bonus toutes les trois bonnes réponses consécutives. Une erreur remet uniquement la série à zéro.
 - Un palier par tranche de 100 étoiles, jusqu’à 15 apparences. Animation de transformation avec étoiles, carillon et nouvel équipement ; toucher pour continuer. Prévisualisation dans le coin parent.
@@ -30,6 +32,8 @@ Pour tester, servir ce dossier avec un serveur HTTP local ; ne pas ouvrir simple
 ## Vérification
 
 `node check.mjs` vérifie les tirages (600 questions), les bonus, les seuils et la limite des 15 paliers. `node --check app.js` et `node --check sw.js` vérifient la syntaxe.
+
+Mise à jour des difficultés : profils 6 / 13 / 26 lettres et migration des anciens réglages vérifiés automatiquement. Dans le navigateur, le niveau Moyen affiche 13 boutons, Difficile en affiche 26, et le niveau Difficile ainsi que les 30 étoiles existantes sont conservés après rechargement. Le changement de difficulté en cours de partie remplace immédiatement la question.
 
 Vérifications réalisées dans le navigateur : accueil et jeu en portrait 390 × 844 et paysage 844 × 390, accueil sur écran large 1280 × 720, attribution des étoiles, retrait du choix incorrect sans perte de points, conservation de la progression après rechargement, calcul d’accès au coin parent et prévisualisation de transformation. Les changements d’écran reviennent en haut de page. Le bon fonctionnement de la voix réelle et de l’installation doit être confirmé sur le téléphone Android cible.
 
