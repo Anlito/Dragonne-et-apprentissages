@@ -1,4 +1,5 @@
 import {difficultyFor} from './engine.mjs';
+import {cleanActivities} from './activities.mjs';
 export const PROFILES_KEY='dragonne-profiles-v1';
 export const PROFILE_IDS=['dragonne','dragon'];
 export const PROFILE_META={
@@ -7,7 +8,7 @@ export const PROFILE_META={
 };
 export function cleanProfile(value){
   const score=Number.isFinite(value?.score)?Math.floor(value.score):0;
-  return {score:Number.isSafeInteger(score)&&score>=0?score:0,difficulty:difficultyFor(value),sound:value?.sound!==false,motion:value?.motion!==false};
+  return {score:Number.isSafeInteger(score)&&score>=0?score:0,difficulty:difficultyFor(value),sound:value?.sound!==false,motion:value?.motion!==false,activities:cleanActivities(value?.activities)};
 }
 export function loadProfiles(saved,legacy=null){
   const valid=saved?.version===1&&saved.profiles&&typeof saved.profiles==='object';

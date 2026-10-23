@@ -109,3 +109,11 @@ La synthèse vocale utilise les voix françaises disponibles dans le navigateur 
 Toucher le compagnon sur l’accueil ou dans les jeux ouvre un portrait en grand de son apparence actuelle, avec son palier et ses points. Fermeture par grande croix, Échap ou fond extérieur. La pause entre questions attend la fermeture du portrait. Le bouton de changement de profil conserve son rôle.
 
 Mains : nouvelle illustration générée avec l’outil intégré, puis corrigée et contrôlée visuellement pose par pose. Prompt : « cinq mains en papier découpé texturé, peau pêche, poignets vert sauge, fond transparent, 1 / 2 / 3 / 4 / 5 doigts levés, aucune inscription ». Source de production : `assets/mains-papier.png`. Vérification des combinaisons 1–9 et de l’affichage portrait/paysage ; points et sauvegardes inchangés.
+
+## Activités visibles par enfant
+
+Dans le coin parent, choisir Dragonne ou Dragon puis cocher les activités à afficher. Enregistrement immédiat par profil dans la sauvegarde existante ; étoiles, difficulté et apparence conservées. Les anciennes sauvegardes affichent les quatre activités par défaut. Masquer le jeu ouvert ramène à l’accueil et annule ses transitions. Si tous les jeux sont masqués, un panneau invite à les choisir dans le coin parent ; les réglages restent accessibles.
+
+La liste commune se trouve dans `activities.mjs` (identifiant stable, bouton d’accueil, nom, illustration). Pour ajouter un jeu, y ajouter son entrée et son écran/bouton/gestionnaire dans l’application. La liste parent et la normalisation des sauvegardes incluront automatiquement cette nouvelle activité, visible par défaut. Ne pas réutiliser l’identifiant d’un ancien jeu. Cache PWA v19.
+
+Vérifications : migration sans perte des points, booléens de visibilité, indépendance entre enfants, sauvegarde et restauration, cas tous masqués. Dans le navigateur sur localhost : deux jeux masqués pour Dragonne après rechargement, quatre jeux toujours visibles pour Dragon, retour à l’accueil après masquage du jeu ouvert, panneau sans activité et réactivation. Aucun réglage de test modifié sur le site public.
