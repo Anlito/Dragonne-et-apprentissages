@@ -1,9 +1,12 @@
+import {ANIMALS,createMemory,flipMemory,settleMemory} from './memory.mjs';
 import {award,rankFor,question,DIFFICULTIES,difficultyFor,RANK_THRESHOLDS,POINTS_PER_RANK} from './engine.mjs';
 const $=s=>document.querySelector(s), $$=s=>document.querySelectorAll(s);
 const key='dragonne-v1';
 let state={score:0,difficulty:'easy',sound:true,motion:true};
 try{const saved=JSON.parse(localStorage.getItem(key));if(saved){state.score=Number.isFinite(saved.score)?Math.max(0,Math.floor(saved.score)):0;state.difficulty=difficultyFor(saved);state.sound=saved.sound!==false;state.motion=saved.motion!==false;}}catch{}
 const profile=()=>DIFFICULTIES[state.difficulty];
+let activeActivity='letters', memoryBoard=null, memoryTimer, memoryStartScore=0, afterCelebration;
+const activePage=()=>activeActivity==='memory'?$('#memory'):$('#game');
 let streak=0, completed=0, current=null, mistakes=0, locked=false, turnTimer, evolutionTimer, toastTimer, challengeAnswer, deferredInstall;
 const names=['Petite aventurière','Petite exploratrice','Première cape','Jeune écuyère','Écuyère courageuse','Écuyère étoilée','Petite chevalière','Chevalière vaillante','Chevalière du royaume','Gardienne des feuilles','Gardienne des étoiles','Gardienne de la lumière','Chevalière dorée','Héroïne couronnée','Héroïne du soleil'];
 function save(){try{localStorage.setItem(key,JSON.stringify(state));}catch{$('#storage-note').textContent='Le navigateur ne permet pas de conserver la progression. Elle reste disponible pendant cette partie.';}}
@@ -19,38 +22,68 @@ function choose(letter,el){if(locked||el.disabled)return;if(letter!==current.tar
 function clearQuestionTransition(){
   $('#question-transition').hidden=true;
   $('#question-transition').classList.remove('leaving');
-  $('#game').classList.remove('celebrating');
+  $('#game').classList.remove('celebrating');$('#memory').classList.remove('celebrating');
 }
-function celebrateQuestion(result,evolves){
+function celebrateQuestion(result,evolves,continuation=next){
+  afterCelebration=continuation;
   $('#game').classList.remove('question-enter');
   $('#reward-points').textContent='+'+(result.points+result.bonus);
   $('#reward-caption').textContent=result.bonus?'Étoiles et bonus !':result.points===1?'Une étoile gagnée !':'Étoiles gagnées !';
   $('#question-transition').hidden=false;
-  $('#game').classList.add('celebrating');
+  activePage().classList.add('celebrating');
   turnTimer=setTimeout(()=>finishQuestionTransition(evolves),2200);
 }
 function finishQuestionTransition(evolves){
-  if($('#game').hidden){clearQuestionTransition();return;}
+  if(activePage().hidden){clearQuestionTransition();return;}
   if($('#parent').open){turnTimer=setTimeout(()=>finishQuestionTransition(evolves),300);return;}
   $('#question-transition').classList.add('leaving');
-  turnTimer=setTimeout(()=>{clearQuestionTransition();if(evolves)showEvolution(false);else next();},state.motion?300:0);
+  turnTimer=setTimeout(()=>{clearQuestionTransition();if(evolves)showEvolution(false);else afterCelebration();},state.motion?300:0);
 }
 function showEvolution(preview){clearTimeout(turnTimer);const dialog=$('#evolution');dialog.dataset.preview=String(preview);$('#evolution-rank').textContent=`${names[rankFor(state.score)-1]} · Palier ${rankFor(state.score)}`;dialog.showModal();const dragon=dialog.querySelector('.dragon');dragon.style.animation='none';void dragon.offsetWidth;dragon.style.animation='';chime(true);say('Ta dragonne grandit ! Quelle belle aventure !');clearTimeout(evolutionTimer);evolutionTimer=setTimeout(closeEvolution,state.motion?3400:1400);}
-function closeEvolution(){clearTimeout(evolutionTimer);const dialog=$('#evolution');const preview=dialog.dataset.preview==='true';dialog.close();if(!preview&&!$('#game').hidden)next();}
+function closeEvolution(){clearTimeout(evolutionTimer);const dialog=$('#evolution');const preview=dialog.dataset.preview==='true';dialog.close();if(!preview&&!activePage().hidden)afterCelebration();}
 $('#skip-evolution').onclick=closeEvolution;$('#evolution').addEventListener('cancel',e=>{e.preventDefault();closeEvolution();});
-$('#letters').onclick=()=>{$('#welcome').hidden=true;$('#game').hidden=false;window.scrollTo(0,0);streak=0;completed=0;render();next();};
-$('#home').onclick=()=>{clearTimeout(turnTimer);clearQuestionTransition();if('speechSynthesis'in window)speechSynthesis.cancel();$('#game').hidden=true;$('#welcome').hidden=false;window.scrollTo(0,0);current=null;locked=false;};
+$('#letters').onclick=()=>{activeActivity='letters';clearTimeout(memoryTimer);$('#memory').hidden=true;$('#welcome').hidden=true;$('#game').hidden=false;window.scrollTo(0,0);streak=0;completed=0;render();next();};
+$('#home').onclick=()=>{clearTimeout(turnTimer);clearTimeout(memoryTimer);$('#memory').hidden=true;clearQuestionTransition();if('speechSynthesis'in window)speechSynthesis.cancel();$('#game').hidden=true;$('#welcome').hidden=false;window.scrollTo(0,0);current=null;locked=false;};
 $('#listen').onclick=listen;$('#greet').onclick=()=>say('Coucou ! Je suis ta dragonne. Viens jouer avec moi !');
 $$('[data-soon]').forEach(el=>el.onclick=()=>{toast('Cette activité arrive bientôt !');say(`${el.dataset.soon} arrive bientôt. Tu peux jouer aux lettres !`);});
 $('#settings').onclick=()=>{const a=4+Math.floor(Math.random()*5),b=3+Math.floor(Math.random()*6);challengeAnswer=a+b;$('#challenge').textContent=`${a} + ${b}`;$('#parent-gate').hidden=false;$('#parent-options').hidden=true;$('#gate-answer').value='';$('#gate-error').textContent='';$('#parent').showModal();};
 $('#gate-form').onsubmit=e=>{e.preventDefault();if(Number($('#gate-answer').value)!==challengeAnswer){$('#gate-error').textContent='Réessaie.';return;}$('#parent-gate').hidden=true;$('#parent-options').hidden=false;$('#level').value=state.difficulty;renderDifficulty();renderRanks();$('#sound').checked=state.sound;$('#motion').checked=state.motion;};
 function renderRanks(){const rank=rankFor(state.score);$('#rank-summary').textContent=rank===15?`${state.score} étoiles · dernier palier atteint !`:`${state.score} étoiles · palier ${rank}/15 · encore ${RANK_THRESHOLDS[rank]-state.score} étoiles avant le suivant.`;$('#rank-rows').replaceChildren(...RANK_THRESHOLDS.map((points,i)=>{const row=document.createElement('tr');const level=document.createElement('th'),name=document.createElement('td'),threshold=document.createElement('td');level.textContent=String(i+1);name.textContent=names[i]+(rank===i+1?' · actuel':'');threshold.textContent=String(points);row.append(level,name,threshold);return row;}));}
 function renderDifficulty(){const p=profile();$('#difficulty-summary').textContent=`${p.letters} lettres proposées · ${p.numbers} chiffres proposés · ${p.memoryPairs} paires (${p.memoryPairs*2} cartes) · quantités de 1 à ${p.maxQuantity}.`;}
-$('#level').onchange=e=>{state.difficulty=e.target.value;save();render();renderDifficulty();if(!$('#game').hidden){clearTimeout(turnTimer);next();}};
+$('#level').onchange=e=>{state.difficulty=e.target.value;save();render();renderDifficulty();if(!activePage().hidden){clearTimeout(turnTimer);clearQuestionTransition();if(activeActivity==='memory')startMemory();else next();}};
 $('#sound').onchange=e=>{state.sound=e.target.checked;if(!state.sound&&'speechSynthesis'in window)speechSynthesis.cancel();save();};
 $('#motion').onchange=e=>{state.motion=e.target.checked;save();render();};
-$('#preview-evolution').onclick=()=>showEvolution(true);
+$('#preview-evolution').onclick=()=>{if($('#question-transition').hidden)showEvolution(true);else toast('Ferme le coin parent pour terminer la récompense.');};
 window.addEventListener('beforeinstallprompt',e=>{e.preventDefault();deferredInstall=e;$('#install').hidden=false;});$('#install').onclick=async()=>{if(deferredInstall){await deferredInstall.prompt();deferredInstall=null;$('#install').hidden=true;}};
 document.addEventListener('visibilitychange',()=>{if(document.hidden&&'speechSynthesis'in window)speechSynthesis.cancel();});
 if('serviceWorker'in navigator)navigator.serviceWorker.register('./sw.js').catch(()=>toast('Le mode hors connexion n’a pas pu être activé.'));
 render();
+
+function startMemory(){
+  clearTimeout(memoryTimer);clearTimeout(turnTimer);clearQuestionTransition();
+  activeActivity='memory';$('#welcome').hidden=true;$('#game').hidden=true;$('#memory').hidden=false;$('#memory-finish').hidden=true;
+  streak=0;memoryStartScore=state.score;memoryBoard=createMemory(profile().memoryPairs);window.scrollTo(0,0);
+  const board=$('#memory-board');board.dataset.pairs=memoryBoard.pairs;
+  board.replaceChildren(...memoryBoard.cards.map((card,index)=>{
+    const button=document.createElement('button');button.className='memory-card';button.type='button';
+    const back=document.createElement('span');back.className='memory-back';back.textContent='✦';back.setAttribute('aria-hidden','true');
+    const front=document.createElement('span');front.className='memory-front';front.setAttribute('aria-hidden','true');
+    const animal=document.createElement('span');animal.className='animal-face';animal.style.backgroundPosition=((card.animal%4)*100/3)+'% '+(Math.floor(card.animal/4)*100/3)+'%';front.append(animal);button.append(back,front);button.onclick=()=>chooseMemory(index);return button;
+  }));
+  $('#memory-feedback').textContent='Retourne deux cartes pour trouver une paire.';renderMemory();render();memoryHelp();
+}
+function renderMemory(){
+  $('#memory-found').textContent=memoryBoard.found+' / '+memoryBoard.pairs+' paires';$('#memory-difficulty').textContent=profile().label;
+  [...$('#memory-board').children].forEach((button,index)=>{const card=memoryBoard.cards[index];button.classList.toggle('revealed',card.revealed);button.classList.toggle('matched',card.matched);button.disabled=card.matched||memoryBoard.busy;button.setAttribute('aria-label',card.revealed?ANIMALS[card.animal]+(card.matched?' · paire trouvée':''):'Carte '+(index+1)+' face cachée');button.setAttribute('aria-pressed',String(card.revealed));});
+}
+function memoryHelp(){say('Retourne deux cartes. Retrouve les deux mêmes animaux !');}
+function chooseMemory(index){
+  if($('#memory').hidden)return;const result=flipMemory(memoryBoard,index);if(result.type==='ignored')return;renderMemory();
+  if(result.type==='first'){say(ANIMALS[result.animal]);$('#memory-feedback').textContent='Cherche le même animal.';return;}
+  if(result.type==='mismatch'){streak=0;render();$('#memory-feedback').textContent='Pas pareil… souviens-toi de ces animaux !';say('Pas pareil. Essaie encore !');memoryTimer=setTimeout(finishMemoryMismatch,1500);return;}
+  const oldRank=rankFor(state.score),reward=award(state.score,streak,result.mistakes);state.score=reward.score;streak=reward.streak;save();render();
+  $('#memory-feedback').textContent='Une paire trouvée ! +'+reward.points+(reward.bonus?' et +5 de bonus':'')+(reward.points===1&&!reward.bonus?' étoile.':' étoiles.');chime();say(result.complete?'Bravo ! Tu as retrouvé tous les animaux !':'Bravo ! Les deux mêmes animaux !');
+  celebrateQuestion(reward,rankFor(state.score)>oldRank,()=>{settleMemory(memoryBoard);renderMemory();if(result.complete){$('#memory-finish').hidden=false;$('#memory-total').textContent=(state.score-memoryStartScore)+' étoiles gagnées pendant cette partie.';$('#memory-feedback').textContent='Bravo ! Tu peux rejouer quand tu veux.';}else $('#memory-feedback').textContent='À toi de trouver une nouvelle paire !';});
+}
+function finishMemoryMismatch(){if($('#memory').hidden)return;if($('#parent').open){memoryTimer=setTimeout(finishMemoryMismatch,300);return;}settleMemory(memoryBoard);renderMemory();$('#memory-feedback').textContent='Retourne deux autres cartes. Tu peux y arriver !';}
+$('#memory-start').onclick=startMemory;$('#memory-replay').onclick=startMemory;$('#memory-help').onclick=memoryHelp;

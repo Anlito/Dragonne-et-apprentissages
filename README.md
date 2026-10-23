@@ -4,9 +4,12 @@ Première version de la PWA Android « Dragonne-et-apprentissages », pensée po
 
 ## Fonctionnement
 
-- Accueil avec les quatre activités illustrées. Seul le jeu des lettres est jouable à cette étape ; memory, chiffres et quantités sont annoncés comme à venir.
+- Accueil avec les quatre activités illustrées. Les lettres et le memory des animaux sont jouables ; chiffres et quantités sont annoncés comme à venir.
 - Lettres majuscules A–Z et consigne vocale réécoutable. Le coin parent propose un niveau global : **Facile** (6 lettres), **Moyen** (13 lettres), **Difficile** (26 lettres). Facile est le réglage par défaut. Une grille compacte est utilisée à partir de 13 lettres.
-- Le même profil définit les futures activités : chiffres avec 3 / 6 / 9 choix, memory avec 4 / 8 / 16 paires (8 / 16 / 32 cartes), quantités de 1 à 3 / 6 / 9. Le tableau du coin parent expose ces valeurs. Ces trois activités restent à venir.
+- Le même profil définit le memory avec 4 / 8 / 16 paires (8 / 16 / 32 cartes) ainsi que les futures activités : chiffres avec 3 / 6 / 9 choix, quantités de 1 à 3 / 6 / 9. Le tableau du coin parent expose ces valeurs.
+- Memory : 16 animaux en papier découpé, choisis et mélangés à chaque partie. Toucher deux cartes ; une mauvaise paire reste visible 1,5 seconde puis se retourne. Les paires trouvées restent visibles à leur place. Aucun chronomètre ni limite de tentatives.
+- Memory : une mauvaise paire compte comme une faute. La paire trouvée suivante rapporte 10 étoiles sans faute depuis la dernière paire, 5 après une faute, 1 après deux fautes ou plus. Une erreur casse la série ; trois paires consécutives sans erreur donnent 5 étoiles bonus. La pause de réussite et les transformations de palier sont communes aux deux activités. Fin de partie avec total gagné et bouton illustré pour rejouer.
+- Une partie de memory en cours n’est pas sauvegardée après fermeture ; les étoiles déjà gagnées sont conservées. Changer la difficulté relance une nouvelle grille en conservant les étoiles.
 - Les anciens réglages sont migrés sans perdre les étoiles : 3 ou 6 lettres deviennent Facile ; l’alphabet complet devient Difficile. Le niveau global est sauvegardé sur l’appareil et appliqué immédiatement à la partie en cours.
 - Erreurs sans retrait de points. Chaque erreur retire le choix incorrect ; les autres lettres restent à leur place pour conserver les repères visuels. La bonne réponse reste toujours disponible. Les choix reviennent à la question suivante. Ce principe sera repris pour les chiffres.
 - Récompense selon les erreurs de la question : 10 étoiles sans faute, 5 après une faute, 1 après deux fautes ou plus. Les points déjà acquis ne sont jamais retirés. Le compteur d’erreurs revient à zéro à chaque question.
@@ -28,6 +31,7 @@ Application statique sans dépendance de production ni étape de compilation.
 - `style.css` : mise en page, couleurs, animations et affichage adaptatif.
 - `app.js` : voix, interactions, sauvegarde et réglages.
 - `engine.mjs` : tirage des lettres, points et paliers.
+- `memory.mjs` : création des grilles, retournement, comparaisons et fin de partie du memory.
 - `assets/` : planches approuvées et icônes. Les personnages utilisent pour l’instant la planche de conception comme atlas CSS, à remplacer par des images transparentes séparées pour la finition.
 - `manifest.webmanifest`, `sw.js` : installation et cache PWA. Incrémenter la version du cache à chaque modification publiée des ressources.
 - `.github/workflows/pages.yml` : publication automatique de la branche `main` avec GitHub Pages.
@@ -37,6 +41,12 @@ Pour tester, servir ce dossier avec un serveur HTTP local ; ne pas ouvrir simple
 ## Vérification
 
 `node check.mjs` vérifie les tirages (600 questions), les bonus, les seuils et la limite des 15 paliers. `node --check app.js` et `node --check sw.js` vérifient la syntaxe.
+
+`node check-memory.mjs` vérifie les 3 tailles sur 150 grilles, exactement deux cartes par animal, les doubles clics, le blocage d’une troisième carte, le retournement après erreur, le barème après aide et la fin d’une partie complète.
+
+Vérifications navigateur du memory : partie de 4 paires terminée, 36 étoiles gagnées après deux erreurs puis trois paires sans erreur (1 + 10 + 10 + 15), pause de réussite, cartes conservées à leur place, bouton Encore avec nouvelle grille, difficultés à 8 / 16 / 32 cartes et vues portrait 390 × 844 / paysage 844 × 390. Aucun score de test n’a été ajouté sur le site public : les parties de vérification utilisent uniquement localhost.
+
+Visuels : `assets/animaux.png` est une planche 4 × 4 créée avec l’outil de génération d’images intégré. Direction : 16 animaux distincts centrés dans des cases régulières, papier découpé texturé, couleurs douces, fond crème, aucun texte. Ordre des animaux défini dans `memory.mjs`.
 
 Transitions vérifiées dans le navigateur : panneau visible avec un gain de +5 puis +10 selon les fautes, arrivée automatique de la question suivante après la pause et panneau masqué immédiatement lors du retour à l’accueil. Les vérifications des points et paliers continuent de passer.
 
@@ -50,6 +60,6 @@ Dépôt : https://github.com/Anlito/Dragonne-et-apprentissages. Hébergement pr�
 
 ## Suite
 
-Développer memory, reconnaissance des chiffres, quantités puis atelier photo. Finaliser les personnages transparents, les voix hors connexion et vérifier les petits écrans ainsi que les orientations sur appareils réels. Aucune caméra n’est activée dans cette version.
+Développer reconnaissance des chiffres, quantités puis atelier photo. Finaliser les personnages transparents, les voix hors connexion et vérifier les petits écrans ainsi que les orientations sur appareils réels. Aucune caméra n’est activée dans cette version.
 
 La synthèse vocale utilise les voix françaises disponibles dans le navigateur ; sa disponibilité hors connexion dépend du système. Le mode muet désactive les consignes parlées : réactiver la voix pour l’exercice d’écoute.
