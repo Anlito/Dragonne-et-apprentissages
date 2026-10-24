@@ -20,7 +20,7 @@ assert.equal(cleanName('  Anna   Rose  '),'Anna Rose');assert.equal(cleanName('L
 assert.equal(loadProfiles({...migrated,activeId:'__proto__'}).activeId,'dragonne');
 assert.equal(loadProfiles({version:2,profiles:{},order:[],activeId:null},legacy).order.length,0);
 assert.deepEqual(loadProfiles({version:2,order:['missing','child-max','child-max'],profiles:{'child-max':restored.profiles[max]}}).order,['child-max']);
-assert.equal(DRAGON_IDS.length,4);for(const d of Object.values(DRAGONS)){assert.equal(d.ranks.length,15);assert.ok(d.sprite.endsWith('.png'));}
+assert.equal(DRAGON_IDS.length,4);for(const d of Object.values(DRAGONS)){assert.equal(d.ranks.length,100);assert.ok(d.sprite.endsWith('.png'));}
 assert.deepEqual(cleanActivities({letters:false,numbers:0,counting:'false',unknown:false}),{...cleanActivities(),letters:false});
 assert.ok(Object.values(cleanActivities(Object.fromEntries(Object.keys(cleanActivities()).map(id=>[id,false])))).every(v=>v===false));
 console.log('Profils enfants : création, prénoms, quatre dragons, choix identiques autorisés, migration sans perte, édition sans remise à zéro, isolation et restauration vérifiés.');

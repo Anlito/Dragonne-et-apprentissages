@@ -1,3 +1,4 @@
+import {extendedRankNames} from './dragon-evolutions.mjs';
 import {cleanChallenge} from './challenge.mjs';
 import {cleanFluency} from './fluency.mjs';
 import {difficultyFor} from './engine.mjs';
@@ -7,10 +8,10 @@ export const PREVIOUS_PROFILES_KEY='dragonne-profiles-v1';
 const femaleRanks=['Petite aventurière','Petite exploratrice','Première cape','Jeune écuyère','Écuyère courageuse','Écuyère étoilée','Petite chevalière','Chevalière vaillante','Chevalière du royaume','Gardienne des feuilles','Gardienne des étoiles','Gardienne de la lumière','Chevalière dorée','Héroïne couronnée','Héroïne du soleil'];
 const maleRanks=['Petit aventurier','Petit explorateur','Première cape','Jeune écuyer','Écuyer courageux','Écuyer étoilé','Petit chevalier','Chevalier vaillant','Chevalier du royaume','Gardien des feuilles','Gardien des étoiles','Gardien de la lumière','Chevalier doré','Héros couronné','Héros du soleil'];
 export const DRAGONS={
- dragonne:{label:'Dragonne des feuilles',sprite:'assets/dragonne.png',companion:'Ta dragonne',ranks:femaleRanks},
- dragon:{label:'Dragon azur',sprite:'assets/dragon.png',companion:'Ton dragon',ranks:maleRanks},
- braise:{label:'Braise',sprite:'assets/dragon-braise.png',companion:'Ton dragon',ranks:maleRanks},
- soleil:{label:'Soleil',sprite:'assets/dragon-soleil.png',companion:'Ton dragon',ranks:maleRanks}
+ dragonne:{label:'Dragonne des feuilles',sprite:'assets/dragonne.png',adventures:'assets/dragonne-aventures.png',companion:'Ta dragonne',ranks:extendedRankNames(femaleRanks)},
+ dragon:{label:'Dragon azur',sprite:'assets/dragon.png',adventures:'assets/dragon-aventures.png',companion:'Ton dragon',ranks:extendedRankNames(maleRanks)},
+ braise:{label:'Braise',sprite:'assets/dragon-braise.png',adventures:'assets/dragon-braise-aventures.png',companion:'Ton dragon',ranks:extendedRankNames(maleRanks)},
+ soleil:{label:'Soleil',sprite:'assets/dragon-soleil.png',adventures:'assets/dragon-soleil-aventures.png',companion:'Ton dragon',ranks:extendedRankNames(maleRanks)}
 };
 export const DRAGON_IDS=Object.keys(DRAGONS);
 export function cleanName(value){return typeof value==='string'?value.replace(/[\u0000-\u001f\u007f]/g,'').trim().replace(/\s+/g,' ').slice(0,24):'';}
@@ -48,4 +49,10 @@ export function createChild(accounts,details,id='child-'+(globalThis.crypto?.ran
 export function updateChild(accounts,id,details){
  if(!Object.hasOwn(accounts.profiles,id))throw new Error('Profil introuvable.');
  Object.assign(accounts.profiles[id],profileDetails(accounts,details,id));return accounts.profiles[id];
+}
+export function deleteChild(accounts,id){
+ if(!Object.hasOwn(accounts.profiles,id))throw new Error('Profil introuvable.');
+ delete accounts.profiles[id];accounts.order=accounts.order.filter(childId=>childId!==id);
+ if(accounts.activeId===id||!Object.hasOwn(accounts.profiles,accounts.activeId))accounts.activeId=accounts.order[0]||null;
+ return accounts.activeId;
 }

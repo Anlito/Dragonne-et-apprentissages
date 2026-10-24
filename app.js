@@ -1,14 +1,15 @@
+import {dragonAppearance,equipmentMarkup} from './dragon-evolutions.mjs';
 import {CHALLENGE_IDS,challengePlan,uniqueChallengeQuestion} from './challenge.mjs';
 import {DEFAULT_FLUENCY_TEXT,fluencyTokens,fluencyWordCount,fluencyRecord,recordFluencyAttempt,normalizeFluencyText,createFluencyClock} from './fluency.mjs';
 import {MATH_IDS,MATH_LEVELS,placementReward,arithmeticQuestion,multiplicationQuestion} from './maths.mjs';
 import {READING_IDS,READING_META,readingChoices,readingQuestion,selectPiece,matchWord} from './reading.mjs';
 import {ACTIVITIES} from './activities.mjs';
 import {fingerMarkup} from './hands.mjs';
-import {PROFILES_KEY,PREVIOUS_PROFILES_KEY,DRAGONS,DRAGON_IDS,loadProfiles,cleanProfile,createChild,updateChild} from './profiles.mjs';
+import {PROFILES_KEY,PREVIOUS_PROFILES_KEY,DRAGONS,DRAGON_IDS,loadProfiles,cleanProfile,createChild,updateChild,deleteChild} from './profiles.mjs';
 import {createEvolutionGate} from './evolution.mjs';
 import {COUNT_OBJECTS,DICE_PIPS,countingQuestion} from './counting.mjs';
 import {ANIMALS,createMemory,flipMemory,settleMemory,memoryLayout} from './memory.mjs';
-import {award,rankFor,question,numberQuestion,DIFFICULTIES,difficultyFor,RANK_THRESHOLDS,POINTS_PER_RANK,parsePoints} from './engine.mjs';
+import {award,rankFor,question,numberQuestion,DIFFICULTIES,difficultyFor,RANK_THRESHOLDS,MAX_RANK,POINTS_PER_RANK,parsePoints} from './engine.mjs';
 const $=s=>document.querySelector(s), $$=s=>document.querySelectorAll(s);
 function readSaved(key){try{return JSON.parse(localStorage.getItem(key));}catch{return null;}}
 const accounts=loadProfiles(readSaved(PROFILES_KEY)??readSaved(PREVIOUS_PROFILES_KEY),readSaved('dragonne-v1'));
@@ -21,6 +22,7 @@ const profile=()=>DIFFICULTIES[activityDifficulty()];
 let activeActivity='letters', memoryBoard=null, memoryTimer, memoryStartScore=0, afterCelebration;
 let selectedTable=null,mathRound=0;
 let mixedChallenge=null;
+let childToDelete=null;
 const generateQuestion=factory=>mixedChallenge?uniqueChallengeQuestion(factory,mixedChallenge.seen,activeActivity):factory();
 const isMath=()=>MATH_IDS.includes(activeActivity);
 const isReading=()=>READING_IDS.includes(activeActivity);
@@ -29,8 +31,16 @@ const activePage=()=>activeActivity==='fluency'?$('#fluence'):activeActivity==='
 let evolutionGate=null;
 let streak=0, completed=0, current=null, mistakes=0, locked=false, turnTimer, evolutionTimer, toastTimer, challengeAnswer, deferredInstall;
 function save(){if(!activeId||!Object.hasOwn(accounts.profiles,activeId))return;try{accounts.activeId=activeId;accounts.profiles[activeId]=state;localStorage.setItem(PROFILES_KEY,JSON.stringify(accounts));renderProfileChoices();}catch{$('#storage-note').textContent='Le navigateur ne permet pas de conserver la progression. Elle reste disponible pendant cette partie.';}}
-function setDragon(el,rank,id=state.dragonId){el.style.backgroundImage=`url('${DRAGONS[id].sprite}')`;const i=rank-1;el.style.backgroundPosition=`${(i%5)*25}% ${Math.floor(i/5)*50}%`;}
-function render(){renderChallengeProgress();const rank=rankFor(state.score);$('#listen').hidden=isMath();$('#voice-note').hidden=isMath();$$('[data-score]').forEach(el=>el.textContent=state.score);$$('[data-rank]').forEach(el=>el.textContent=rank);$$('[data-progress]').forEach(el=>el.style.width=`${rank===15?100:(state.score%POINTS_PER_RANK)/POINTS_PER_RANK*100}%`);$$('.dragon').forEach(el=>setDragon(el,rank));$('.rank-label').innerHTML=`${rankNames()[rank-1]} · <span data-rank>${rank}</span>/15`;$('#streak').textContent=`Série · ${streak}`;$('#difficulty').textContent=`${profile().label} · ${isMath()?(activeActivity==='multiply'?(selectedTable?'Table de '+selectedTable:'Tables'):current?.mode==='line'?'Jauge':MATH_LEVELS[activityDifficulty()].choices+' choix'):isReading()?(activeActivity==='traps'?'2 choix':activeActivity==='link-words'?'3 mots':activeActivity==='build-word'?({easy:4,medium:6,hard:8})[activityDifficulty()]+' choix':readingChoices(activityDifficulty())+' choix'):activeActivity==='counting'?profile().numbers+' choix':activeActivity==='numbers'?profile().numbers+' choix':profile().letters+' lettres'}`;document.body.classList.toggle('reduce-motion',!state.motion);document.body.dataset.profile=state.dragonId;$$('.dragon').forEach(el=>el.setAttribute('aria-label',dragonMeta().companion));setDragon($('.profile-avatar'),rank);$('#profile-toggle').setAttribute('aria-label','Changer d’enfant, '+childLabel());$('#greet').setAttribute('aria-label','Voir '+(state.dragonId==='dragonne'?'la dragonne':'le dragon')+' en grand');$('#evolution-title').textContent=dragonMeta().companion+' grandit !';renderProfileChoices();renderActivities();}
+function setDragon(el,rank,id=state.dragonId){
+ const look=dragonAppearance(rank),dragon=DRAGONS[id];el.style.backgroundImage="url('"+(look.atlas==='classic'?dragon.sprite:dragon.adventures)+"')";
+ el.style.backgroundSize=(look.columns*100)+'% '+(look.rows*100)+'%';el.style.backgroundPosition=((look.cell%look.columns)*100/(look.columns-1))+'% '+(Math.floor(look.cell/look.columns)*100/(look.rows-1))+'%';
+ el.classList.toggle('advanced-dragon',look.grade>0);el.dataset.visualRank=rank;el.dataset.grade=look.grade;
+ let gear=el.querySelector('.rank-equipment');if(!look.grade){gear?.remove();return;}
+ if(!gear){gear=document.createElement('span');gear.className='rank-equipment';gear.setAttribute('aria-hidden','true');el.append(gear);}
+ gear.innerHTML=equipmentMarkup(look.grade);
+}
+
+function render(){renderChallengeProgress();const rank=rankFor(state.score);$('#listen').hidden=isMath();$('#voice-note').hidden=isMath();$$('[data-score]').forEach(el=>el.textContent=state.score);$$('[data-rank]').forEach(el=>el.textContent=rank);$$('[data-progress]').forEach(el=>el.style.width=`${rank===MAX_RANK?100:(state.score%POINTS_PER_RANK)/POINTS_PER_RANK*100}%`);$$('.dragon').forEach(el=>setDragon(el,rank));$('.rank-label').innerHTML=`${rankNames()[rank-1]} · <span data-rank>${rank}</span>/100`;$('#streak').textContent=`Série · ${streak}`;$('#difficulty').textContent=`${profile().label} · ${isMath()?(activeActivity==='multiply'?(selectedTable?'Table de '+selectedTable:'Tables'):current?.mode==='line'?'Jauge':MATH_LEVELS[activityDifficulty()].choices+' choix'):isReading()?(activeActivity==='traps'?'2 choix':activeActivity==='link-words'?'3 mots':activeActivity==='build-word'?({easy:4,medium:6,hard:8})[activityDifficulty()]+' choix':readingChoices(activityDifficulty())+' choix'):activeActivity==='counting'?profile().numbers+' choix':activeActivity==='numbers'?profile().numbers+' choix':profile().letters+' lettres'}`;document.body.classList.toggle('reduce-motion',!state.motion);document.body.dataset.profile=state.dragonId;$$('.dragon').forEach(el=>el.setAttribute('aria-label',dragonMeta().companion));setDragon($('.profile-avatar'),rank);$('#profile-toggle').setAttribute('aria-label','Changer d’enfant, '+childLabel());$('#greet').setAttribute('aria-label','Voir '+(state.dragonId==='dragonne'?'la dragonne':'le dragon')+' en grand');$('#evolution-title').textContent=dragonMeta().companion+' grandit !';renderProfileChoices();renderActivities();}
 function say(text,done){
   let finished=false;const finish=()=>{if(finished)return;finished=true;done?.();};
   if(!state.sound||!('speechSynthesis'in window)){finish();return;}
@@ -105,8 +115,8 @@ $('#listen').onclick=listen;$('#greet').onclick=openCompanion;
 $$('[data-soon]').forEach(el=>el.onclick=()=>{toast('Cette activité arrive bientôt !');say(`${el.dataset.soon} arrive bientôt. Tu peux jouer aux lettres !`);});
 $('#settings').onclick=()=>{$('#reset-confirmation').hidden=true;$('#reset-progress').hidden=false;$('#reset-result').textContent='';const a=4+Math.floor(Math.random()*5),b=3+Math.floor(Math.random()*6);challengeAnswer=a+b;$('#challenge').textContent=`${a} + ${b}`;$('#parent-gate').hidden=false;$('#parent-options').hidden=true;$('#gate-answer').value='';$('#gate-error').textContent='';$('#parent').showModal();};
 $('#gate-form').onsubmit=e=>{e.preventDefault();if(Number($('#gate-answer').value)!==challengeAnswer){$('#gate-error').textContent='Réessaie.';return;}$('#parent-gate').hidden=true;$('#parent-options').hidden=false;renderParentSettings();};
-function renderParentSettings(){renderChallengeSettings();renderFluencyParent();renderChildSelect();renderActivitySettings();$('#reset-confirmation').hidden=true;$('#reset-progress').hidden=false;$('#reset-result').textContent='';$('#parent-profile').value=activeId;$('#parent-profile-note').textContent='Réglages et progression de '+childLabel()+' uniquement.';$('#level').value=state.difficulty;$('#manual-points').value=state.score;$('#points-result').textContent='';previewPoints();renderDifficulty();renderRanks();$('#sound').checked=state.sound;$('#motion').checked=state.motion;}
-function renderRanks(){const rank=rankFor(state.score);$('#rank-summary').textContent=rank===15?`${state.score} étoiles · dernier palier atteint !`:`${state.score} étoiles · palier ${rank}/15 · encore ${RANK_THRESHOLDS[rank]-state.score} étoiles avant le suivant.`;$('#rank-rows').replaceChildren(...RANK_THRESHOLDS.map((points,i)=>{const row=document.createElement('tr');const level=document.createElement('th'),name=document.createElement('td'),threshold=document.createElement('td');level.textContent=String(i+1);name.textContent=rankNames()[i]+(rank===i+1?' · actuel':'');threshold.textContent=String(points);row.append(level,name,threshold);return row;}));}
+function renderParentSettings(){resetDeleteChild();renderChallengeSettings();renderFluencyParent();renderChildSelect();renderActivitySettings();$('#reset-confirmation').hidden=true;$('#reset-progress').hidden=false;$('#reset-result').textContent='';$('#parent-profile').value=activeId;$('#parent-profile-note').textContent='Réglages et progression de '+childLabel()+' uniquement.';$('#level').value=state.difficulty;$('#manual-points').value=state.score;$('#points-result').textContent='';previewPoints();renderDifficulty();renderRanks();$('#sound').checked=state.sound;$('#motion').checked=state.motion;}
+function renderRanks(){const rank=rankFor(state.score);$('#rank-summary').textContent=rank===MAX_RANK?`${state.score} étoiles · dernier palier atteint !`:`${state.score} étoiles · palier ${rank}/100 · encore ${RANK_THRESHOLDS[rank]-state.score} étoiles avant le suivant.`;$('#rank-rows').replaceChildren(...RANK_THRESHOLDS.map((points,i)=>{const row=document.createElement('tr');const level=document.createElement('th'),name=document.createElement('td'),threshold=document.createElement('td');level.textContent=String(i+1);name.textContent=rankNames()[i]+(rank===i+1?' · actuel':'');threshold.textContent=String(points);row.append(level,name,threshold);return row;}));}
 function renderDifficulty(){const p=DIFFICULTIES[state.difficulty];$('#difficulty-summary').textContent=`${p.letters} lettres proposées · ${p.numbers} réponses en nombres (${state.difficulty==='easy'?'doigts':state.difficulty==='medium'?'doigts et chiffres':'chiffres'}) · ${p.memoryPairs} paires (${p.memoryPairs*2} cartes) · lecture : ${readingChoices(state.difficulty)} choix · quantités de 1 à 9 avec ${p.numbers} propositions.`;}
 $('#level').onchange=e=>{if(mixedChallenge)returnHome();state.difficulty=e.target.value;save();render();renderDifficulty();renderActivitySettings();if(!activePage().hidden){clearTimeout(turnTimer);clearQuestionTransition();if(activeActivity==='memory')startMemory();else next();}};
 $('#sound').onchange=e=>{state.sound=e.target.checked;if(!state.sound&&'speechSynthesis'in window)speechSynthesis.cancel();save();};
@@ -186,9 +196,9 @@ function renderCounting(){
   }
 }
 
-function previewPoints(){const points=parsePoints($('#manual-points').value);$('#points-preview').textContent=points===null?'Indique un nombre entier positif ou nul.':points+' étoiles · palier '+rankFor(points)+'/15 · '+rankNames()[rankFor(points)-1];}
+function previewPoints(){const points=parsePoints($('#manual-points').value);$('#points-preview').textContent=points===null?'Indique un nombre entier positif ou nul.':points+' étoiles · palier '+rankFor(points)+'/100 · '+rankNames()[rankFor(points)-1];}
 $('#manual-points').oninput=previewPoints;
-$('#points-form').onsubmit=event=>{event.preventDefault();const points=parsePoints($('#manual-points').value);if(points===null){$('#points-result').textContent='Indique un nombre entier positif ou nul.';return;}applyPoints(points);$('#points-result').textContent=points+' étoiles enregistrées pour '+childLabel()+'. Palier '+rankFor(points)+'/15.';$('#reset-result').textContent='';};
+$('#points-form').onsubmit=event=>{event.preventDefault();const points=parsePoints($('#manual-points').value);if(points===null){$('#points-result').textContent='Indique un nombre entier positif ou nul.';return;}applyPoints(points);$('#points-result').textContent=points+' étoiles enregistrées pour '+childLabel()+'. Palier '+rankFor(points)+'/100.';$('#reset-result').textContent='';};
 
 function renderProfileChoices(){
  const grid=$('#child-profiles');grid.replaceChildren(...accounts.order.map(id=>{
@@ -238,7 +248,7 @@ $('#profile-create-form').onsubmit=event=>{
 };
 showProfileChooser();
 
-function openCompanion(){render();$('#companion-title').textContent=dragonMeta().label+(/^[aeiouyhàâäéèêëîïôöùûüœ]/i.test(childLabel())?' d’':' de ')+childLabel();$('#companion-rank').textContent=rankNames()[rankFor(state.score)-1]+' · Palier '+rankFor(state.score)+'/15';$('#companion-view').showModal();}
+function openCompanion(){render();$('#companion-title').textContent=dragonMeta().label+(/^[aeiouyhàâäéèêëîïôöùûüœ]/i.test(childLabel())?' d’':' de ')+childLabel();$('#companion-rank').textContent=rankNames()[rankFor(state.score)-1]+' · Palier '+rankFor(state.score)+'/100';$('#companion-view').showModal();}
 $$('.companion-open').forEach(button=>button.onclick=openCompanion);
 $('#companion-view').addEventListener('click',event=>{if(event.target!==event.currentTarget)return;const r=event.currentTarget.getBoundingClientRect();if(event.clientX<r.left||event.clientX>r.right||event.clientY<r.top||event.clientY>r.bottom)event.currentTarget.close();});
 
@@ -506,3 +516,22 @@ function renderChallengeSettings(){
  $('#challenge-settings').replaceChildren(...CHALLENGE_IDS.map(id=>{const activity=ACTIVITIES.find(a=>a.id===id),label=document.createElement('label'),input=document.createElement('input');input.type='checkbox';input.checked=state.challenge[id];input.setAttribute('aria-label','Dans le défi — '+activity.label);const text=document.createElement('span');text.textContent=activity.label+(state.activities[id]?'':' · masquée, exclue du défi');input.onchange=()=>{state.challenge[id]=input.checked;save();$('#challenge-settings-status').textContent='Composition du défi enregistrée pour '+childLabel()+'.';};label.append(input,text);return label;}));
  $('#challenge-settings-status').textContent='';
 }
+
+// Suppression explicite depuis le coin parent, limitée à l'enfant confirmé.
+
+function resetDeleteChild(){
+ childToDelete=null;$('#delete-child-confirmation').hidden=true;$('#delete-child').hidden=false;$('#delete-child-error').textContent='';
+}
+$('#delete-child').onclick=()=>{
+ childToDelete=activeId;$('#delete-child-warning').textContent='Supprimer définitivement le profil de '+childLabel()+' et ses '+state.score+' étoiles ? Ses réglages et records seront également effacés sur cet appareil.';
+ $('#delete-child-confirmation').hidden=false;$('#delete-child').hidden=true;$('#delete-child-cancel').focus();
+};
+$('#delete-child-cancel').onclick=()=>{resetDeleteChild();$('#delete-child').focus();};
+$('#delete-child-confirm').onclick=()=>{
+ if(!childToDelete||childToDelete!==activeId||!Object.hasOwn(accounts.profiles,childToDelete))return;
+ // Préparer la nouvelle sauvegarde avant de modifier l'état affiché.
+ const updated=loadProfiles(JSON.parse(JSON.stringify(accounts)));deleteChild(updated,childToDelete);
+ try{localStorage.setItem(PROFILES_KEY,JSON.stringify(updated));}catch{$('#delete-child-error').textContent='La suppression n’a pas pu être enregistrée. Le profil est conservé. Réessaie.';return;}
+ returnHome();accounts.profiles=updated.profiles;accounts.order=updated.order;accounts.activeId=updated.activeId;activeId=updated.activeId;state=accounts.profiles[activeId]||cleanProfile(null);profileChosen=false;memoryBoard=null;
+ resetDeleteChild();if($('#parent').open)$('#parent').close();render();showProfileChooser();
+};

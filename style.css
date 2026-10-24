@@ -147,3 +147,11 @@ body.reading-active #game.number-spelling[data-reading=number-words] .reading-ch
 @media(max-width:500px){.challenge-card .tile{width:85px;height:85px}.challenge-card>span:last-child{font-size:20px}.activity.challenge-card{gap:12px;padding:9px}#challenge-settings{grid-template-columns:1fr}#challenge-progress{font-size:13px;padding:6px;margin:4px auto}}
 
 body.challenge-running .fluence-toolbar{top:35px}
+
+.dragon,.profile-dragon,.profile-avatar,.dragon-option-image{position:relative}.advanced-dragon{clip-path:none!important}.rank-equipment{display:block;position:absolute;bottom:9%;right:1%;width:32%;aspect-ratio:72/76;filter:drop-shadow(1px 3px 1px #60492d55);pointer-events:none;z-index:2}.rank-equipment svg{display:block;width:100%;height:100%;fill:initial;stroke:initial;stroke-width:initial;stroke-linecap:round;overflow:visible}.profile-avatar .rank-equipment{bottom:2%;width:36%}.portrait-dragon .rank-equipment{width:29%;bottom:8%;right:2%}
+
+.all-ranks{margin:14px 0}.all-ranks summary{padding:12px;background:#e8dfef;border-radius:12px;cursor:pointer;font-weight:700}.advanced-dragon{mask-image:radial-gradient(ellipse 95% 85% at 50% 50%,#000 70%,transparent 100%)}
+
+.delete-child-zone{margin:22px 0;padding:16px;background:#f4e2d9;border-radius:18px}.danger-button{padding:12px 16px;border-radius:13px;background:#a84f4f;color:white;min-height:48px;box-shadow:0 4px 0 #813f3f}.delete-child-zone button{margin:6px 8px 6px 0}
+
+.dragon.advanced-dragon,.profile-dragon.advanced-dragon{aspect-ratio:1;margin-bottom:0!important}.advanced-dragon{mask-image:radial-gradient(ellipse 70% 70% at 50% 50%,#000 60%,transparent 95%)}
