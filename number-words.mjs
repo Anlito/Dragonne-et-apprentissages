@@ -10,10 +10,11 @@ export function numberInFrench(n){
 }
 export function numberWordsQuestion(difficulty='easy',previous=null,random=Math.random){
  const max={easy:9,medium:20,hard:100}[difficulty]??9;
- const inverse=String(previous).startsWith('letters:'),previousNumber=String(previous).split(':').at(-1);
+ const inverse=String(previous).startsWith('letters:'),audio=!inverse&&!String(previous).startsWith('audio:'),previousNumber=String(previous).split(':').at(-1);
  const values=Array.from({length:max+1},(_,i)=>i),number=shuffle(values.filter(n=>String(n)!==previousNumber),random)[0];
  const numbers=shuffle([number,...numberDistractors(number,max,readingChoices(difficulty)-1,difficulty,random)],random);
- return {kind:'number-words',id:(inverse?'digits:':'letters:')+number,number,direction:inverse?'digits-to-letters':'letters-to-digits',target:inverse?numberInFrench(number):number,label:inverse?String(number):numberInFrench(number),choices:inverse?numbers.map(numberInFrench):numbers,display:'number-word',prompt:inverse?'Regarde le nombre et retrouve son écriture en lettres.':'Lis le nombre écrit en lettres et retrouve-le parmi les chiffres.'};
+ const instruction=audio?'Écoute le nombre et retrouve-le parmi les chiffres.':inverse?'Regarde le nombre et retrouve son écriture en lettres.':'Lis le nombre écrit en lettres et retrouve-le parmi les chiffres.';
+ return {kind:'number-words',id:(audio?'audio:':inverse?'digits:':'letters:')+number,number,direction:audio?'audio-to-digits':inverse?'digits-to-letters':'letters-to-digits',target:inverse?numberInFrench(number):number,label:audio?'':inverse?String(number):numberInFrench(number),choices:inverse?numbers.map(numberInFrench):numbers,display:audio?null:'number-word',instruction,prompt:audio?'Écoute le nombre : '+numberInFrench(number)+'. Retrouve-le parmi les chiffres.':instruction};
 }
 export function numberDistractors(number,max,count,difficulty,random=Math.random){
  const pool=shuffle(Array.from({length:max+1},(_,n)=>n).filter(n=>n!==number),random);

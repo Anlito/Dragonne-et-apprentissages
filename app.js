@@ -21,6 +21,7 @@ const activityDifficulty=()=>state.activityLevels?.[activeActivity]||state.diffi
 const profile=()=>DIFFICULTIES[activityDifficulty()];
 let activeActivity='letters', memoryBoard=null, memoryTimer, memoryStartScore=0, afterCelebration;
 let selectedTable=null,mathRound=0;
+const lastNumberWordsByChild=Object.create(null);
 let mixedChallenge=null;
 let childToDelete=null;
 const generateQuestion=factory=>mixedChallenge?uniqueChallengeQuestion(factory,mixedChallenge.seen,activeActivity):factory();
@@ -291,14 +292,15 @@ function startReading(kind){
 function nextReading(){
  if($('#game').hidden||!isReading())return;
  clearQuestionTransition();$('#game').classList.remove('question-enter');void $('#game').offsetWidth;$('#game').classList.add('question-enter');
- current=generateQuestion(()=>readingQuestion(activeActivity,activityDifficulty(),current?.id));locked=false;mistakes=0;
- $('#feedback').textContent=activeActivity==='number-words'?current.prompt:READING_META[activeActivity].instruction;renderReading();dots();
+ current=generateQuestion(()=>readingQuestion(activeActivity,activityDifficulty(),current?.id||(activeActivity==='number-words'?lastNumberWordsByChild[activeId]:null)));
+ if(activeActivity==='number-words')lastNumberWordsByChild[activeId]=current.id;locked=false;mistakes=0;
+ $('#feedback').textContent=activeActivity==='number-words'?(current.instruction||current.prompt):READING_META[activeActivity].instruction;renderReading();dots();
  if(activeActivity==='graphemes')say(READING_META.graphemes.instruction);else listen();
 }
 function renderReading(){
  const board=$('#reading-board'),choices=$('#choices');board.replaceChildren();choices.replaceChildren();
  $('#game').classList.toggle('number-spelling',activeActivity==='number-words'&&current.direction==='digits-to-letters');
- if(activeActivity==='number-words')$('.question h1').textContent=current.direction==='digits-to-letters'?'Comment s’écrit ce nombre ?':'Quel est ce nombre ?';
+ if(activeActivity==='number-words'){$('.question h1').textContent=current.direction==='audio-to-digits'?'Quel nombre entends-tu ?':current.direction==='digits-to-letters'?'Comment s’écrit ce nombre ?':'Quel est ce nombre ?';$('#listen').setAttribute('aria-label',current.direction==='audio-to-digits'?'Réécouter le nombre':'Écouter la consigne');}
  board.hidden=!current.display;choices.hidden=current.display==='match';choices.dataset.count=current.choices.length;choices.style.setProperty('--reading-rows',Math.ceil(current.choices.length/3));
  if(current.display==='match'){renderWordLinks();return;}
  if(current.display==='number-word'){const word=document.createElement('div');word.className='number-word-card';word.textContent=current.label;board.append(word);}

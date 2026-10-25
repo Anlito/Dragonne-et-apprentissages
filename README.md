@@ -292,3 +292,13 @@ Avant le départ, les deux premières lignes sont visibles pour reconnaître le 
 
 Fichiers : renderFluency dans app.js et classe fluence-preview-lines dans style.css ; cache PWA v29. Vérifications navigateur localhost : aperçu limité à deux lignes en 360×640 et 1024×768, révélation des 69 mots au lancement, retour à l’aperçu après réouverture. Aucun point modifié. Vérification de syntaxe et de diff réussie.
 
+## Chiffres et lettres : variante audio (v30)
+
+Trois variantes alternent : écouter un nombre et retrouver son écriture chiffrée ; lire son écriture en lettres et choisir les chiffres ; voir les chiffres et choisir les lettres. La première question d’une nouvelle session est audio. L’alternance est conservée en mémoire pour chaque enfant pendant la session, y compris entre les passages de cette activité dans le défi.
+
+Dans la variante audio, le titre demande « Quel nombre entends-tu ? », le haut-parleur permet de réécouter et aucun grand nombre ni mot-réponse n’est affiché. La phrase parlée contient le nombre ; la consigne affichée ne le révèle pas. Les difficultés gardent 0–9 avec 3 choix, 0–20 avec 4 choix et 0–100 avec 6 choix proches. Points, bonus, retrait des mauvaises propositions, sauvegarde et passage à la suite sont partagés avec les variantes de lecture. La voix française et le réglage du son restent ceux de l’application.
+
+Fichiers : number-words.mjs (direction, consigne et phrase parlée), app.js (titre, réécoute et alternance par enfant), check-number-words.mjs (1 500 questions sur les trois modes et niveaux). Vérifications : cible présente une seule fois, nombre de propositions, bornes, non-répétition du nombre, cycle audio/lettres/chiffres et absence de réponse écrite dans la présentation audio. Suites de lecture et récompenses réussies. Cache PWA v30.
+
+Navigateur localhost en 360×640 : titre audio, bouton Réécouter le nombre et quatre chiffres sans carte de réponse écrite ; erreurs puis bonne réponse (+1), lecture de « un » vers 1 (+10), lecture de 7 vers « sept » (+10), puis retour automatique à la variante audio. Total local de départ restauré après les essais. La phrase à prononcer est vérifiée par les tests de génération ; la qualité de la voix dépend des voix installées sur l’appareil.
+
