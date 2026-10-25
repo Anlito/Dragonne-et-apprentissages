@@ -286,3 +286,9 @@ Le texte de fluence est masqué tant que l’enfant n’a pas lancé le chrono. 
 
 Vérification navigateur localhost : texte invisible avant départ, visible dès le lancement à 1:00, puis de nouveau invisible après retour à l’accueil et réouverture. Aucun point modifié.
 
+## Fluence : aperçu de deux lignes (v29)
+
+Avant le départ, les deux premières lignes sont visibles pour reconnaître le texte ; le reste est masqué. Cet aperçu remplace le masquage intégral de la v28. La limite est visuelle et s’adapte à la largeur de l’écran, à la taille des lettres et aux retours à la ligne du texte personnalisé. Au lancement du chrono, l’aperçu est remplacé par le texte complet avec ses repères de record. La sélection du dernier mot en fin de minute est conservée.
+
+Fichiers : renderFluency dans app.js et classe fluence-preview-lines dans style.css ; cache PWA v29. Vérifications navigateur localhost : aperçu limité à deux lignes en 360×640 et 1024×768, révélation des 69 mots au lancement, retour à l’aperçu après réouverture. Aucun point modifié. Vérification de syntaxe et de diff réussie.
+

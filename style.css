@@ -153,5 +153,6 @@ body.challenge-running .fluence-toolbar{top:35px}
 .all-ranks{margin:14px 0}.all-ranks summary{padding:12px;background:#e8dfef;border-radius:12px;cursor:pointer;font-weight:700}.advanced-dragon{mask-image:radial-gradient(ellipse 95% 85% at 50% 50%,#000 70%,transparent 100%)}
 
 .delete-child-zone{margin:22px 0;padding:16px;background:#f4e2d9;border-radius:18px}.danger-button{padding:12px 16px;border-radius:13px;background:#a84f4f;color:white;min-height:48px;box-shadow:0 4px 0 #813f3f}.delete-child-zone button{margin:6px 8px 6px 0}
+.fluence-preview-lines{margin:0;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;line-clamp:2;overflow:hidden;white-space:pre-wrap}
 
 .dragon.advanced-dragon,.profile-dragon.advanced-dragon{aspect-ratio:1;margin-bottom:0!important}.advanced-dragon{mask-image:radial-gradient(ellipse 70% 70% at 50% 50%,#000 60%,transparent 95%)}

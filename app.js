@@ -454,9 +454,12 @@ function renderFluency(){
  $('#fluence-timer').classList.toggle('timer-ended',attempt.seconds===0);$('#fluence-best').textContent=record.best?'⚑ Record : '+record.best+' mots':'⚑ Ton premier record';
  $('#fluence-history').textContent=record.attempts?'Dernier essai : '+record.last+' mots · '+(record.best<count?'Objectif : atteindre le mot '+(record.best+1)+' !':'Tu as déjà atteint la fin du texte !'):'Le drapeau indiquera ton meilleur mot après ton premier essai.';
  $('#fluence-run').disabled=!['ready','result'].includes(attempt.phase);$('#fluence-run').textContent=attempt.phase==='reading'?'Lecture en cours…':attempt.phase==='choose'||attempt.phase==='reward'?'Minute terminée':attempt.phase==='result'?'↻ Réessayer pendant 1 minute':'▶ Lire pendant 1 minute';
- $('#fluence-instruction').textContent=attempt.phase==='ready'?'Le texte apparaîtra quand tu lanceras le chrono.':attempt.phase==='reading'?'À toi de lire ! Le chrono dure une minute.':choosing?'Touche le dernier mot lu, puis la coche verte.':attempt.phase==='reward'?'Lecture enregistrée !':'Tu peux recommencer depuis le début pour dépasser ton record.';
+ $('#fluence-instruction').textContent=attempt.phase==='ready'?'Voici le début du texte. La suite apparaîtra au lancement du chrono.':attempt.phase==='reading'?'À toi de lire ! Le chrono dure une minute.':choosing?'Touche le dernier mot lu, puis la coche verte.':attempt.phase==='reward'?'Lecture enregistrée !':'Tu peux recommencer depuis le début pour dépasser ton record.';
  $('#fluence-result').textContent=choosing&&attempt.selected!==null?attempt.selected+' mots atteints. Tu peux encore changer le mot sélectionné.':attempt.phase==='result'?(attempt.outcome?.newRecord?'Nouveau record ! ':'')+(attempt.outcome?.last??0)+' mots atteints · record : '+record.best+' mots.':'';
- const text=$('#fluence-text');text.hidden=attempt.phase==='ready';text.replaceChildren(...fluencyTokens(attempt.text).map(token=>{
+ const text=$('#fluence-text');text.hidden=false;text.classList.toggle('fluence-preview',attempt.phase==='ready');
+ if(attempt.phase==='ready'){
+  const preview=document.createElement('p');preview.className='fluence-preview-lines';preview.textContent=attempt.text;text.replaceChildren(preview);
+ }else text.replaceChildren(...fluencyTokens(attempt.text).map(token=>{
   if(!token.index)return document.createTextNode(token.text);
   const word=document.createElement('button');word.type='button';word.className='fluence-word';word.textContent=token.text;word.dataset.word=token.index;word.disabled=!choosing;word.setAttribute('aria-label','Mot '+token.index+' : '+token.text);word.setAttribute('aria-pressed',String(attempt.selected===token.index));
   word.classList.toggle('best-word',record.best>0&&record.best===token.index);word.classList.toggle('last-word',record.last>0&&record.last===token.index);word.classList.toggle('selected-word',attempt.selected===token.index);
