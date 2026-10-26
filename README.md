@@ -4,7 +4,7 @@ Première version de la PWA Android « Dragonne-et-apprentissages », pensée po
 
 ## Fonctionnement
 
-- Les seize activités de l’accueil sont jouables : quatre jeux initiaux, huit jeux de lecture, deux jeux de mathématiques, la fluence et le défi de 20 exercices, tous activables par profil dans le coin parent.
+- Les dix-neuf activités de l’accueil sont jouables : quatre jeux initiaux, trois petits jeux visuels, huit jeux de lecture, deux jeux de mathématiques, la fluence et le défi de 20 exercices, tous activables par profil dans le coin parent.
 - Lettres majuscules A–Z et consigne vocale réécoutable. Le coin parent propose un niveau global : **Facile** (6 lettres), **Moyen** (13 lettres), **Difficile** (26 lettres). Facile est le réglage par défaut. Une grille compacte est utilisée à partir de 13 lettres.
 - Le même profil définit le memory avec 4 / 8 / 16 paires (8 / 16 / 32 cartes), les chiffres avec 3 / 6 / 9 choix et le comptage de 1 à 9 à tous les niveaux, avec 3 / 6 / 9 réponses proposées. Le tableau du coin parent expose ces valeurs.
 - Comptage : une quantité exacte de pommes, étoiles, pierres précieuses ou fleurs en papier découpé apparaît. La voix demande combien il y en a, sans annoncer la réponse. Certaines questions présentent un dé avec 1 à 6 points ; les quantités 7 à 9 utilisent toujours des objets. Le haut-parleur répète la question. Le chiffre demandé ne se répète pas immédiatement.
@@ -302,3 +302,29 @@ Fichiers : number-words.mjs (direction, consigne et phrase parlée), app.js (tit
 
 Navigateur localhost en 360×640 : titre audio, bouton Réécouter le nombre et quatre chiffres sans carte de réponse écrite ; erreurs puis bonne réponse (+1), lecture de « un » vers 1 (+10), lecture de 7 vers « sept » (+10), puis retour automatique à la variante audio. Total local de départ restauré après les essais. La phrase à prononcer est vérifiée par les tests de génération ; la qualité de la voix dépend des voix installées sur l’appareil.
 
+
+
+## 26 octobre 2026 — Trois petits jeux pour les plus jeunes (v31)
+
+- **Les formes** : la voix demande le carré, le rond, l’étoile, le triangle, l’ovale ou le losange. Les réponses montrent seulement les dessins. Une couleur commune aux propositions change à chaque question pour ne pas apprendre la réponse par sa couleur.
+- **Les cris des animaux** : six vrais enregistrements locaux (chat, chien, vache, canard, mouton, cheval), six illustrations en papier découpé et un gros bouton pour réécouter. Aucun nom d’animal n’est prononcé avant la réponse. Les fichiers audio restent disponibles hors connexion après le chargement complet du cache. Une lecture bloquée par le navigateur invite à toucher le haut-parleur.
+- **Le puzzle des ombres** : 12 objets (bateau, sapin, maison, parapluie, poisson, papillon, fleur, fusée, voiture, pomme, tasse, glace). Glisser une silhouette sur l’objet ou toucher une silhouette puis l’objet. Un dépôt hors de la cible ne compte pas comme une faute. Chaque silhouette utilise exactement les mêmes tracés que l’objet coloré, dans la même orientation. L’objet danse une seconde avant la récompense ; les animations peuvent être désactivées.
+- **Difficulté par enfant et par jeu** : Facile 2 propositions, Moyen 3, Difficile 4. Les six formes, six animaux et 12 objets sont disponibles dès Facile. Les choix sont distincts, incluent toujours la réponse et la cible ne se répète pas immédiatement dans une activité normale. Les nouvelles activités sont visibles par défaut et peuvent être masquées dans le coin parent.
+- **Progression commune** : une erreur retire le mauvais choix sans déplacer les autres. Récompenses 10 / 5 / 1 selon les fautes, +5 toutes les trois réponses parfaites de suite, sauvegarde propre à l’enfant, évolution et transitions habituelles. Un double clic ne rapporte pas deux fois. Les trois jeux sont aussi disponibles dans les réglages du défi de 20 exercices. Les profils et points existants sont conservés.
+- **Son et navigation** : arrêt des cris en quittant le jeu, en ouvrant le coin parent, en masquant l’onglet ou en coupant le son. Le haut-parleur permet ensuite de réécouter. Un changement de niveau dans le coin parent ne lance pas de cri derrière la fenêtre.
+
+### Fichiers à modifier
+
+`preschool.mjs` contient les six formes, les six animaux, les 12 objets vectoriels et le générateur 2/3/4 choix. `app.js` gère les consignes, l’audio et les gestes tactiles. `style.css` contient les adaptations portrait et paysage. `activities.mjs` et `challenge.mjs` déclarent les nouveaux jeux. `audio-credits.html`, accessible du coin parent, donne les auteurs, sources et licences de chaque enregistrement et permet de les écouter. Les sons originaux renommés se trouvent dans `assets/audio/` et ne sont pas modifiés. Le cache `dragonne-v31` précharge les nouveaux fichiers.
+
+### Visuels et sources
+
+Deux atlas créés avec le skill imagegen : `assets/animaux-sons.png` (3 colonnes × 2 lignes, chat/chien/vache puis canard/mouton/cheval), `assets/petits-jeux.png` (3 pictogrammes horizontaux formes/animaux/ombres). Direction donnée : papier découpé texturé, fond ivoire, sauge, lavande, jaune doux, animaux expressifs adaptés aux petits, sans texte ; cases séparées et silhouettes entièrement visibles. Originaux conservés : `C:/Users/pc/.codex/generated_images/01a1690e-b2f1-7da1-8299-97315b176fb9/exec-f91fc12c-9f84-4209-a5f9-4a2b6e85a693.png` et `exec-4665afd6-777e-4973-ba9c-78f6516ecdcc.png`. Les formes et objets/ombres sont dessinés dans le code pour garantir leur correspondance. Les licences des enregistrements sont détaillées dans [les crédits](audio-credits.html) : CC BY-SA 3.0 pour chat, chien, vache et canard ; CC0 pour mouton ; domaine public pour cheval.
+
+### Vérifications
+
+`node check-preschool.mjs` : 2 700 questions, couverture des banques, 2/3/4 choix uniques avec bonne réponse, absence de répétition immédiate, identité des tracés objet/ombre, présence et en-tête des fichiers audio, difficulté et visibilité sauvegardées par profil, participation au défi. Exécution des vrais gestionnaires de réponse pour chacun des trois jeux avec 0/1/2 fautes : points 10/5/1, bonus, sauvegarde une seule fois, verrouillage et suite. Régressions : profils, défi/contenus, récompenses et moteur.
+
+Vérifications visuelles dans le navigateur : téléphone 360×640 et paysage 740×360, 2/3/4 choix ; bon dépôt, mauvais choix retiré, solution par deux touchers, gains +10 puis +5, question suivante et réglages après rechargement. Les six fichiers sont décodés par les lecteurs audio du navigateur sans erreur. Les points et niveaux du profil local de test ont été restaurés après les essais. Aucun profil du site public n’a été modifié.
+
+Limites : banque volontairement limitée aux six formes demandées, six cris et 12 objets distincts ; les questions varient les choix et leur ordre. Les consignes parlées des formes et ombres utilisent la voix française de l’appareil ; sa disponibilité hors connexion dépend des voix installées. Les cris enregistrés ne dépendent pas de la synthèse vocale. Le glisser-déposer a été essayé avec les événements de pointeur dans le navigateur ; un essai sur un téléphone Android physique reste utile.

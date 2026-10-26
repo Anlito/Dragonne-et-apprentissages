@@ -3,6 +3,7 @@ import {CHALLENGE_IDS,challengePlan,uniqueChallengeQuestion} from './challenge.m
 import {DEFAULT_FLUENCY_TEXT,fluencyTokens,fluencyWordCount,fluencyRecord,recordFluencyAttempt,normalizeFluencyText,createFluencyClock} from './fluency.mjs';
 import {MATH_IDS,MATH_LEVELS,placementReward,arithmeticQuestion,multiplicationQuestion} from './maths.mjs';
 import {READING_IDS,READING_META,readingChoices,readingQuestion,selectPiece,matchWord} from './reading.mjs';
+import {PRESCHOOL_IDS,PRESCHOOL_META,preschoolChoices,preschoolQuestion,SHAPES,SOUND_ANIMALS,SHADOW_OBJECTS,shapeMarkup,shadowMarkup,onShadowTarget} from './preschool.mjs';
 import {ACTIVITIES} from './activities.mjs';
 import {fingerMarkup} from './hands.mjs';
 import {PROFILES_KEY,PREVIOUS_PROFILES_KEY,DRAGONS,DRAGON_IDS,loadProfiles,cleanProfile,createChild,updateChild,deleteChild} from './profiles.mjs';
@@ -25,6 +26,8 @@ const lastNumberWordsByChild=Object.create(null);
 let mixedChallenge=null;
 let childToDelete=null;
 const generateQuestion=factory=>mixedChallenge?uniqueChallengeQuestion(factory,mixedChallenge.seen,activeActivity):factory();
+const isPreschool=()=>PRESCHOOL_IDS.includes(activeActivity);
+let animalCall=null,shadowDrag=null,selectedShadow=null;
 const isMath=()=>MATH_IDS.includes(activeActivity);
 const isReading=()=>READING_IDS.includes(activeActivity);
 let fluencyClock=null,fluencyAttempt=null;
@@ -41,7 +44,7 @@ function setDragon(el,rank,id=state.dragonId){
  gear.innerHTML=equipmentMarkup(look.grade);
 }
 
-function render(){renderChallengeProgress();const rank=rankFor(state.score);$('#listen').hidden=isMath();$('#voice-note').hidden=isMath();$$('[data-score]').forEach(el=>el.textContent=state.score);$$('[data-rank]').forEach(el=>el.textContent=rank);$$('[data-progress]').forEach(el=>el.style.width=`${rank===MAX_RANK?100:(state.score%POINTS_PER_RANK)/POINTS_PER_RANK*100}%`);$$('.dragon').forEach(el=>setDragon(el,rank));$('.rank-label').innerHTML=`${rankNames()[rank-1]} · <span data-rank>${rank}</span>/100`;$('#streak').textContent=`Série · ${streak}`;$('#difficulty').textContent=`${profile().label} · ${isMath()?(activeActivity==='multiply'?(selectedTable?'Table de '+selectedTable:'Tables'):current?.mode==='line'?'Jauge':MATH_LEVELS[activityDifficulty()].choices+' choix'):isReading()?(activeActivity==='traps'?'2 choix':activeActivity==='link-words'?'3 mots':activeActivity==='build-word'?({easy:4,medium:6,hard:8})[activityDifficulty()]+' choix':readingChoices(activityDifficulty())+' choix'):activeActivity==='counting'?profile().numbers+' choix':activeActivity==='numbers'?profile().numbers+' choix':profile().letters+' lettres'}`;document.body.classList.toggle('reduce-motion',!state.motion);document.body.dataset.profile=state.dragonId;$$('.dragon').forEach(el=>el.setAttribute('aria-label',dragonMeta().companion));setDragon($('.profile-avatar'),rank);$('#profile-toggle').setAttribute('aria-label','Changer d’enfant, '+childLabel());$('#greet').setAttribute('aria-label','Voir '+(state.dragonId==='dragonne'?'la dragonne':'le dragon')+' en grand');$('#evolution-title').textContent=dragonMeta().companion+' grandit !';renderProfileChoices();renderActivities();}
+function render(){document.body.classList.toggle('preschool-active',!$('#game').hidden&&isPreschool());renderChallengeProgress();const rank=rankFor(state.score);$('#listen').hidden=isMath();$('#voice-note').hidden=isMath();$$('[data-score]').forEach(el=>el.textContent=state.score);$$('[data-rank]').forEach(el=>el.textContent=rank);$$('[data-progress]').forEach(el=>el.style.width=`${rank===MAX_RANK?100:(state.score%POINTS_PER_RANK)/POINTS_PER_RANK*100}%`);$$('.dragon').forEach(el=>setDragon(el,rank));$('.rank-label').innerHTML=`${rankNames()[rank-1]} · <span data-rank>${rank}</span>/100`;$('#streak').textContent=`Série · ${streak}`;$('#difficulty').textContent=`${profile().label} · ${isPreschool()?preschoolChoices(activityDifficulty())+' choix':isMath()?(activeActivity==='multiply'?(selectedTable?'Table de '+selectedTable:'Tables'):current?.mode==='line'?'Jauge':MATH_LEVELS[activityDifficulty()].choices+' choix'):isReading()?(activeActivity==='traps'?'2 choix':activeActivity==='link-words'?'3 mots':activeActivity==='build-word'?({easy:4,medium:6,hard:8})[activityDifficulty()]+' choix':readingChoices(activityDifficulty())+' choix'):activeActivity==='counting'?profile().numbers+' choix':activeActivity==='numbers'?profile().numbers+' choix':profile().letters+' lettres'}`;document.body.classList.toggle('reduce-motion',!state.motion);document.body.dataset.profile=state.dragonId;$$('.dragon').forEach(el=>el.setAttribute('aria-label',dragonMeta().companion));setDragon($('.profile-avatar'),rank);$('#profile-toggle').setAttribute('aria-label','Changer d’enfant, '+childLabel());$('#greet').setAttribute('aria-label','Voir '+(state.dragonId==='dragonne'?'la dragonne':'le dragon')+' en grand');$('#evolution-title').textContent=dragonMeta().companion+' grandit !';renderProfileChoices();renderActivities();}
 function say(text,done){
   let finished=false;const finish=()=>{if(finished)return;finished=true;done?.();};
   if(!state.sound||!('speechSynthesis'in window)){finish();return;}
@@ -49,10 +52,10 @@ function say(text,done){
 }
 let audio;function chime(big=false){if(!state.sound)return;try{audio??=new(window.AudioContext||window.webkitAudioContext)();audio.resume();(big?[523.25,659.25,783.99,1046.5]:[659.25,783.99]).forEach((f,i)=>{const o=audio.createOscillator(),g=audio.createGain(),t=audio.currentTime+i*.13;o.type='sine';o.frequency.value=f;g.gain.setValueAtTime(0,t);g.gain.linearRampToValueAtTime(.07,t+.015);g.gain.exponentialRampToValueAtTime(.001,t+.3);o.connect(g);g.connect(audio.destination);o.start(t);o.stop(t+.31);});}catch{}}
 function toast(text){clearTimeout(toastTimer);$('#toast').textContent=text;$('#toast').hidden=false;toastTimer=setTimeout(()=>$('#toast').hidden=true,2600);}
-function listen(){if(!current||isMath())return;$('#voice-note').classList.toggle('voice-warning',!state.sound||!('speechSynthesis'in window));if(!state.sound){$('#voice-note').textContent='La voix est désactivée dans le coin parent.';return;}if(!('speechSynthesis'in window)){$('#voice-note').textContent='La voix n’est pas disponible dans ce navigateur.';return;}say(isReading()||isMath()?current.prompt:activeActivity==='counting'?current.prompt:`Trouve ${activeActivity==='numbers'?'le chiffre':'la lettre'} ${current.target}.`);$('#voice-note').textContent='Tu peux réécouter autant que tu veux.';}
+function listen(){if(!current||isMath()||locked)return;if(isPreschool()){listenPreschool();return;}$('#voice-note').classList.toggle('voice-warning',!state.sound||!('speechSynthesis'in window));if(!state.sound){$('#voice-note').textContent='La voix est désactivée dans le coin parent.';return;}if(!('speechSynthesis'in window)){$('#voice-note').textContent='La voix n’est pas disponible dans ce navigateur.';return;}say(isReading()||isMath()?current.prompt:activeActivity==='counting'?current.prompt:`Trouve ${activeActivity==='numbers'?'le chiffre':'la lettre'} ${current.target}.`);$('#voice-note').textContent='Tu peux réécouter autant que tu veux.';}
 function dots(){$('#session-dots').replaceChildren(...Array.from({length:10},(_,i)=>{const el=document.createElement('i');if(i<completed%10||(completed>0&&completed%10===0))el.className='done';return el;}));}
 function next(){
-  if($('#game').hidden)return;if(isMath()){nextMath();return;}if(isReading()){nextReading();return;}clearQuestionTransition();$('#game').classList.remove('question-enter');void $('#game').offsetWidth;$('#game').classList.add('question-enter');locked=false;mistakes=0;
+  if($('#game').hidden)return;if(isPreschool()){nextPreschool();return;}if(isMath()){nextMath();return;}if(isReading()){nextReading();return;}clearQuestionTransition();$('#game').classList.remove('question-enter');void $('#game').offsetWidth;$('#game').classList.add('question-enter');locked=false;mistakes=0;
   $('#choices').hidden=false;
   const numeric=activeActivity==='numbers'||activeActivity==='counting';current=generateQuestion(()=>activeActivity==='counting'?countingQuestion(profile().numbers,current?.target):numeric?numberQuestion(profile().numbers,current?.target):question(profile().letters,current?.target));if(activeActivity==='counting')renderCounting();
   $('#choices').classList.toggle('alphabet',!numeric&&profile().letters>=13);$('#choices').classList.toggle('numberpad',numeric);
@@ -100,7 +103,7 @@ function closeEvolution(){
 }
 $('#skip-evolution').onclick=closeEvolution;$('#evolution').addEventListener('cancel',e=>{e.preventDefault();closeEvolution();});
 function startListeningActivity(kind){
-  if(kind==='challenge'){startChallenge();return;}
+  stopAnimalCall();cancelShadowDrag();if(PRESCHOOL_IDS.includes(kind)){startPreschool(kind);return;}if(kind==='challenge'){startChallenge();return;}
   if(kind==='fluency'){startFluency();return;}
   if(MATH_IDS.includes(kind)){startMath(kind);return;}if(READING_IDS.includes(kind)){startReading(kind);return;}
   if(!state.activities[kind])return;
@@ -110,25 +113,25 @@ function startListeningActivity(kind){
   render();next();fitNumberScreen();
 }
 $('#letters').onclick=()=>startListeningActivity('letters');$('#numbers-start').onclick=()=>startListeningActivity('numbers');$('#counting-start').onclick=()=>startListeningActivity('counting');
-function returnHome(){mixedChallenge=null;$('#challenge-progress').hidden=true;if($('#challenge-finish').open)$('#challenge-finish').close();stopFluency();$('#fluence').hidden=true;clearTimeout(evolutionTimer);evolutionGate?.stop();evolutionGate=null;if($('#evolution').open)$('#evolution').close();document.body.classList.remove('memory-active','numbers-active','counting-active','reading-active','math-active','fluency-active');clearTimeout(turnTimer);clearTimeout(memoryTimer);$('#memory').hidden=true;clearQuestionTransition();if('speechSynthesis'in window)speechSynthesis.cancel();$('#game').hidden=true;$('#welcome').hidden=false;window.scrollTo(0,0);current=null;locked=false;streak=0;completed=0;afterCelebration=null;render();}
+function returnHome(){stopAnimalCall();cancelShadowDrag();mixedChallenge=null;$('#challenge-progress').hidden=true;if($('#challenge-finish').open)$('#challenge-finish').close();stopFluency();$('#fluence').hidden=true;clearTimeout(evolutionTimer);evolutionGate?.stop();evolutionGate=null;if($('#evolution').open)$('#evolution').close();document.body.classList.remove('memory-active','numbers-active','counting-active','reading-active','math-active','fluency-active');clearTimeout(turnTimer);clearTimeout(memoryTimer);$('#memory').hidden=true;clearQuestionTransition();if('speechSynthesis'in window)speechSynthesis.cancel();$('#game').hidden=true;$('#welcome').hidden=false;window.scrollTo(0,0);current=null;locked=false;streak=0;completed=0;afterCelebration=null;render();}
 $('#home').onclick=returnHome;
 $('#listen').onclick=listen;$('#greet').onclick=openCompanion;
 $$('[data-soon]').forEach(el=>el.onclick=()=>{toast('Cette activité arrive bientôt !');say(`${el.dataset.soon} arrive bientôt. Tu peux jouer aux lettres !`);});
-$('#settings').onclick=()=>{$('#reset-confirmation').hidden=true;$('#reset-progress').hidden=false;$('#reset-result').textContent='';const a=4+Math.floor(Math.random()*5),b=3+Math.floor(Math.random()*6);challengeAnswer=a+b;$('#challenge').textContent=`${a} + ${b}`;$('#parent-gate').hidden=false;$('#parent-options').hidden=true;$('#gate-answer').value='';$('#gate-error').textContent='';$('#parent').showModal();};
+$('#settings').onclick=()=>{stopAnimalCall();cancelShadowDrag();$('#reset-confirmation').hidden=true;$('#reset-progress').hidden=false;$('#reset-result').textContent='';const a=4+Math.floor(Math.random()*5),b=3+Math.floor(Math.random()*6);challengeAnswer=a+b;$('#challenge').textContent=`${a} + ${b}`;$('#parent-gate').hidden=false;$('#parent-options').hidden=true;$('#gate-answer').value='';$('#gate-error').textContent='';$('#parent').showModal();};
 $('#gate-form').onsubmit=e=>{e.preventDefault();if(Number($('#gate-answer').value)!==challengeAnswer){$('#gate-error').textContent='Réessaie.';return;}$('#parent-gate').hidden=true;$('#parent-options').hidden=false;renderParentSettings();};
 function renderParentSettings(){resetDeleteChild();renderChallengeSettings();renderFluencyParent();renderChildSelect();renderActivitySettings();$('#reset-confirmation').hidden=true;$('#reset-progress').hidden=false;$('#reset-result').textContent='';$('#parent-profile').value=activeId;$('#parent-profile-note').textContent='Réglages et progression de '+childLabel()+' uniquement.';$('#level').value=state.difficulty;$('#manual-points').value=state.score;$('#points-result').textContent='';previewPoints();renderDifficulty();renderRanks();$('#sound').checked=state.sound;$('#motion').checked=state.motion;}
 function renderRanks(){const rank=rankFor(state.score);$('#rank-summary').textContent=rank===MAX_RANK?`${state.score} étoiles · dernier palier atteint !`:`${state.score} étoiles · palier ${rank}/100 · encore ${RANK_THRESHOLDS[rank]-state.score} étoiles avant le suivant.`;$('#rank-rows').replaceChildren(...RANK_THRESHOLDS.map((points,i)=>{const row=document.createElement('tr');const level=document.createElement('th'),name=document.createElement('td'),threshold=document.createElement('td');level.textContent=String(i+1);name.textContent=rankNames()[i]+(rank===i+1?' · actuel':'');threshold.textContent=String(points);row.append(level,name,threshold);return row;}));}
 function renderDifficulty(){const p=DIFFICULTIES[state.difficulty];$('#difficulty-summary').textContent=`${p.letters} lettres proposées · ${p.numbers} réponses en nombres (${state.difficulty==='easy'?'doigts':state.difficulty==='medium'?'doigts et chiffres':'chiffres'}) · ${p.memoryPairs} paires (${p.memoryPairs*2} cartes) · lecture : ${readingChoices(state.difficulty)} choix · quantités de 1 à 9 avec ${p.numbers} propositions.`;}
 $('#level').onchange=e=>{if(mixedChallenge)returnHome();state.difficulty=e.target.value;save();render();renderDifficulty();renderActivitySettings();if(!activePage().hidden){clearTimeout(turnTimer);clearQuestionTransition();if(activeActivity==='memory')startMemory();else next();}};
-$('#sound').onchange=e=>{state.sound=e.target.checked;if(!state.sound&&'speechSynthesis'in window)speechSynthesis.cancel();save();};
+$('#sound').onchange=e=>{state.sound=e.target.checked;if(!state.sound)stopAnimalCall();if(!state.sound&&'speechSynthesis'in window)speechSynthesis.cancel();save();};
 $('#motion').onchange=e=>{state.motion=e.target.checked;save();render();};
-$('#preview-evolution').onclick=()=>{if($('#question-transition').hidden)showEvolution(true);else toast('Ferme le coin parent pour terminer la récompense.');};
+$('#preview-evolution').onclick=()=>{if($('#question-transition').hidden&&!(isPreschool()&&locked))showEvolution(true);else toast('Ferme le coin parent pour terminer la récompense.');};
 window.addEventListener('beforeinstallprompt',e=>{e.preventDefault();deferredInstall=e;$('#install').hidden=false;});$('#install').onclick=async()=>{if(deferredInstall){await deferredInstall.prompt();deferredInstall=null;$('#install').hidden=true;}};
-document.addEventListener('visibilitychange',()=>{if(document.hidden&&'speechSynthesis'in window)speechSynthesis.cancel();});
+document.addEventListener('visibilitychange',()=>{if(document.hidden){stopAnimalCall();cancelShadowDrag();}if(document.hidden&&'speechSynthesis'in window)speechSynthesis.cancel();});
 if('serviceWorker'in navigator)navigator.serviceWorker.register('./sw.js').catch(()=>toast('Le mode hors connexion n’a pas pu être activé.'));
 render();
 
-function startMemory(){
+function startMemory(){stopAnimalCall();cancelShadowDrag();
   if(!state.activities.memory)return;
   clearTimeout(memoryTimer);clearTimeout(turnTimer);clearQuestionTransition();
   activeActivity='memory';document.body.classList.remove('numbers-active','counting-active','reading-active','math-active','fluency-active');document.body.classList.add('memory-active');$('#welcome').hidden=true;$('#game').hidden=true;$('#memory').hidden=false;$('#memory-finish').hidden=true;
@@ -249,7 +252,7 @@ $('#profile-create-form').onsubmit=event=>{
 };
 showProfileChooser();
 
-function openCompanion(){render();$('#companion-title').textContent=dragonMeta().label+(/^[aeiouyhàâäéèêëîïôöùûüœ]/i.test(childLabel())?' d’':' de ')+childLabel();$('#companion-rank').textContent=rankNames()[rankFor(state.score)-1]+' · Palier '+rankFor(state.score)+'/100';$('#companion-view').showModal();}
+function openCompanion(){stopAnimalCall();cancelShadowDrag();render();$('#companion-title').textContent=dragonMeta().label+(/^[aeiouyhàâäéèêëîïôöùûüœ]/i.test(childLabel())?' d’':' de ')+childLabel();$('#companion-rank').textContent=rankNames()[rankFor(state.score)-1]+' · Palier '+rankFor(state.score)+'/100';$('#companion-view').showModal();}
 $$('.companion-open').forEach(button=>button.onclick=openCompanion);
 $('#companion-view').addEventListener('click',event=>{if(event.target!==event.currentTarget)return;const r=event.currentTarget.getBoundingClientRect();if(event.clientX<r.left||event.clientX>r.right||event.clientY<r.top||event.clientY>r.bottom)event.currentTarget.close();});
 
@@ -261,12 +264,12 @@ function renderActivities(){
 function renderActivitySettings(){
  $('#activity-settings').replaceChildren(...ACTIVITIES.map(activity=>{
   const row=document.createElement('div');row.className='activity-setting';const label=document.createElement('label');label.className='activity-setting-top';
-  const art=document.createElement('span');art.className=activity.specialTile!==undefined?'tile special-tile special-tile-'+activity.specialTile:activity.studyTile!==undefined?'tile study-tile study-tile-'+activity.studyTile:activity.mathTile!==undefined?'tile math-tile math-tile-'+activity.mathTile:activity.readingTile===undefined?'tile tile-'+activity.tile:'tile reading-tile reading-tile-'+activity.readingTile;art.setAttribute('aria-hidden','true');
+  const art=document.createElement('span');art.className=activity.preschoolTile!==undefined?'tile preschool-tile preschool-tile-'+activity.preschoolTile:activity.specialTile!==undefined?'tile special-tile special-tile-'+activity.specialTile:activity.studyTile!==undefined?'tile study-tile study-tile-'+activity.studyTile:activity.mathTile!==undefined?'tile math-tile math-tile-'+activity.mathTile:activity.readingTile===undefined?'tile tile-'+activity.tile:'tile reading-tile reading-tile-'+activity.readingTile;art.setAttribute('aria-hidden','true');
   const text=document.createElement('span');text.textContent=activity.label;
   const input=document.createElement('input');input.type='checkbox';input.checked=state.activities[activity.id];input.setAttribute('aria-label','Afficher '+activity.label);
   input.onchange=()=>{if(mixedChallenge)returnHome();state.activities[activity.id]=input.checked;save();if(!input.checked&&activeActivity===activity.id&&!activePage().hidden)returnHome();else renderActivities();$('#activity-settings-status').textContent=(input.checked?'Activité affichée':'Activité masquée')+' pour '+childLabel()+'.';};
   label.append(art,text,input);row.append(label);
-  if(READING_IDS.includes(activity.id)||MATH_IDS.includes(activity.id)){
+  if(READING_IDS.includes(activity.id)||MATH_IDS.includes(activity.id)||PRESCHOOL_IDS.includes(activity.id)){
    const control=document.createElement('label');control.className='activity-level-control';control.textContent='Niveau';const select=document.createElement('select');select.setAttribute('aria-label','Difficulté — '+activity.label);
    for(const [value,name] of [['','Niveau du profil'],['easy','Facile'],['medium','Moyen'],['hard','Difficile']]){const option=document.createElement('option');option.value=value;option.textContent=name;select.append(option);}
    select.value=state.activityLevels[activity.id]||'';select.onchange=()=>{if(mixedChallenge)returnHome();if(select.value)state.activityLevels[activity.id]=select.value;else delete state.activityLevels[activity.id];save();render();if(activeActivity===activity.id&&!activePage().hidden){clearTimeout(turnTimer);clearQuestionTransition();next();}$('#activity-settings-status').textContent='Niveau enregistré pour '+activity.label+' · '+childLabel()+'.';};control.append(select);row.append(control);
@@ -277,7 +280,7 @@ function renderActivitySettings(){
 
 // Activités de lecture : même progression, mêmes transitions que les jeux existants.
 for(const id of READING_IDS)$('#'+id+'-start').onclick=()=>startReading(id);
-function startReading(kind){
+function startReading(kind){stopAnimalCall();cancelShadowDrag();
  if(!state.activities[kind])return;
  clearTimeout(turnTimer);clearTimeout(memoryTimer);clearQuestionTransition();
  stopFluency();$('#fluence').hidden=true;document.body.classList.remove('memory-active','numbers-active','counting-active','math-active','fluency-active');document.body.classList.add('reading-active');
@@ -324,12 +327,12 @@ function renderReading(){
  });
 }
 function readingError(){mistakes++;streak=0;$('#feedback').textContent='Essaie encore. Tu peux réécouter.';render();}
-function finishReading(continuation=nextReading,customResult=null){
+function finishReading(continuation=nextReading,customResult=null,celebrationDelay=0){
  if(locked)return;locked=true;
  $$('#choices button,#reading-board button,#reading-board input').forEach(button=>button.disabled=true);
  const oldRank=rankFor(state.score),result=customResult||award(state.score,streak,mistakes);state.score=result.score;streak=result.streak;completed++;
  save();render();dots();$('#feedback').textContent='Bravo ! +'+result.points+' étoiles'+(result.bonus?' et +5 de bonus !':' !');
- chime();if(!isMath())say(result.bonus?'Bravo ! Un bonus !':'Bravo, tu as trouvé !');celebrateQuestion(result,rankFor(state.score)>oldRank,continuation);
+ chime();if(!isMath())say(result.bonus?'Bravo ! Un bonus !':'Bravo, tu as trouvé !');const celebrate=()=>celebrateQuestion(result,rankFor(state.score)>oldRank,continuation);if(celebrationDelay)turnTimer=setTimeout(celebrate,celebrationDelay);else celebrate();
 }
 function chooseReadingAnswer(value,button){
  if(locked||button.disabled)return;
@@ -380,7 +383,7 @@ window.addEventListener('resize',drawWordLinks);
 
 // Mathématiques : résultat, terme manquant ou position sur une droite graduée.
 for(const kind of MATH_IDS)$('#'+kind+'-start').onclick=()=>startMath(kind);
-function startMath(kind){
+function startMath(kind){stopAnimalCall();cancelShadowDrag();
  if('speechSynthesis'in window)speechSynthesis.cancel();
  if(!state.activities[kind])return;
  clearTimeout(turnTimer);clearTimeout(memoryTimer);clearQuestionTransition();
@@ -441,7 +444,7 @@ function chooseMath(value,button){
 // Fluence : minute réelle, sélection explicite du dernier mot, record par texte/enfant.
 $('#fluency-start').onclick=startFluency;
 function stopFluency(){fluencyClock?.stop();fluencyClock=null;fluencyAttempt=null;}
-function startFluency(){
+function startFluency(){stopAnimalCall();cancelShadowDrag();
  if(!state.activities.fluency)return;
  clearTimeout(turnTimer);clearTimeout(memoryTimer);stopFluency();clearQuestionTransition();
  activeActivity='fluency';current=null;locked=false;streak=0;completed=0;mistakes=0;
@@ -540,3 +543,92 @@ $('#delete-child-confirm').onclick=()=>{
  returnHome();accounts.profiles=updated.profiles;accounts.order=updated.order;accounts.activeId=updated.activeId;activeId=updated.activeId;state=accounts.profiles[activeId]||cleanProfile(null);profileChosen=false;memoryBoard=null;
  resetDeleteChild();if($('#parent').open)$('#parent').close();render();showProfileChooser();
 };
+
+// Petits jeux visuels : progression commune, réglages indépendants par enfant.
+for(const id of PRESCHOOL_IDS)$('#'+id+'-start').onclick=()=>startPreschool(id);
+function stopAnimalCall(){if(animalCall){animalCall.pause();animalCall.currentTime=0;animalCall=null;}$('#listen').classList.remove('animal-playing');}
+function cancelShadowDrag(){if(!shadowDrag)return;const drag=shadowDrag;shadowDrag=null;drag.ghost?.remove();drag.button?.classList.remove('dragging-shadow');if(drag.button?.hasPointerCapture?.(drag.pointerId))drag.button.releasePointerCapture(drag.pointerId);$('#shadow-target')?.classList.remove('drop-ready');}
+function startPreschool(kind){
+ if(!state.activities[kind])return;
+ stopAnimalCall();cancelShadowDrag();stopFluency();clearTimeout(turnTimer);clearTimeout(memoryTimer);clearQuestionTransition();
+ if('speechSynthesis'in window)speechSynthesis.cancel();
+ document.body.classList.remove('memory-active','numbers-active','counting-active','math-active','reading-active','fluency-active');
+ activeActivity=kind;current=null;streak=0;completed=0;locked=false;
+ $('#game').dataset.reading=kind;$('#game').classList.remove('number-spelling');
+ $('#welcome').hidden=true;$('#memory').hidden=true;$('#fluence').hidden=true;$('#game').hidden=false;$('#count-board').hidden=true;
+ $('#reading-board').hidden=kind!=='shadows';$('#choices').hidden=false;$('#choices').className='choices preschool-choices';
+ $('.question h1').textContent=PRESCHOOL_META[kind].title;$('#activity-label').textContent=PRESCHOOL_META[kind].label.toUpperCase();
+ $('#listen').setAttribute('aria-label',kind==='animal-sounds'?'Réécouter le cri de l’animal':'Réécouter la consigne');
+ $('#choices').setAttribute('aria-label',kind==='shapes'?'Choisis la forme':kind==='animal-sounds'?'Choisis l’animal':'Choisis une ombre, puis pose-la sur l’objet');
+ window.scrollTo(0,0);render();nextPreschool();
+}
+function nextPreschool(){
+ if($('#game').hidden||!isPreschool())return;
+ stopAnimalCall();cancelShadowDrag();clearQuestionTransition();selectedShadow=null;
+ current=generateQuestion(()=>preschoolQuestion(activeActivity,activityDifficulty(),current?.id));mistakes=0;locked=false;
+ $('#game').classList.remove('question-enter');void $('#game').offsetWidth;$('#game').classList.add('question-enter');
+ const board=$('#reading-board'),choices=$('#choices');board.replaceChildren();choices.replaceChildren();choices.style.setProperty('--preschool-count',current.choices.length);
+ if(activeActivity==='shadows'){
+  const stage=document.createElement('button');stage.type='button';stage.id='shadow-target';stage.className='shadow-stage';stage.setAttribute('aria-label','Poser l’ombre sélectionnée sur l’objet');stage.innerHTML='<span class="shadow-object">'+shadowMarkup(current.target)+'</span><span class="drop-hint" aria-hidden="true">↓</span><span class="shadow-destination" aria-hidden="true">'+shadowMarkup(current.target,true)+'</span>';
+  stage.onclick=()=>{if(locked)return;if(!selectedShadow){$('#feedback').textContent='Choisis une ombre, puis touche l’objet.';say('Touche une ombre, puis touche l’objet.');return;}choosePreschool(selectedShadow.value,selectedShadow.button);};board.append(stage);
+ }
+ const color=['#a7b789','#b7a4cd','#e3bc70','#cd9381'][Math.floor(Math.random()*4)];
+ for(const value of current.choices){
+  const button=document.createElement('button');button.type='button';button.className='letter preschool-choice';button.dataset.value=value;
+  if(activeActivity==='shapes'){button.innerHTML=shapeMarkup(value,color);button.setAttribute('aria-label',SHAPES.find(item=>item.id===value).name);button.onclick=()=>choosePreschool(value,button);}
+  else if(activeActivity==='animal-sounds'){
+   const animal=SOUND_ANIMALS.find(item=>item.id===value);const image=document.createElement('span');image.className='sound-animal';image.style.backgroundPosition=(animal.tile%3*50)+'% '+(Math.floor(animal.tile/3)*100)+'%';image.setAttribute('aria-hidden','true');button.append(image);button.setAttribute('aria-label',animal.name);button.onclick=()=>choosePreschool(value,button);
+  }else{button.innerHTML=shadowMarkup(value,true);button.setAttribute('aria-label','Ombre : '+SHADOW_OBJECTS.find(item=>item.id===value).name.toLowerCase());button.setAttribute('aria-pressed','false');wireShadow(button,value);}
+  choices.append(button);
+ }
+ $('#feedback').textContent=PRESCHOOL_META[activeActivity].instruction;dots();render();listenPreschool();
+}
+function listenPreschool(){
+ if(!current||locked||!isPreschool())return;
+ stopAnimalCall();$('#voice-note').classList.toggle('voice-warning',!state.sound);
+ if($('#parent').open){$('#voice-note').textContent='Touche le haut-parleur pour réécouter.';return;}
+ if(!state.sound){$('#voice-note').textContent='Le son est désactivé dans le coin parent.';return;}
+ if(activeActivity!=='animal-sounds'){
+  if(!('speechSynthesis'in window)){$('#voice-note').textContent='La voix n’est pas disponible dans ce navigateur.';return;}
+  say(current.prompt);$('#voice-note').textContent='Touche le haut-parleur pour réécouter.';return;
+ }
+ if('speechSynthesis'in window)speechSynthesis.cancel();
+ const call=new Audio(SOUND_ANIMALS.find(item=>item.id===current.target).audio);animalCall=call;call.volume=.8;
+ const ended=()=>{if(animalCall===call){animalCall=null;$('#listen').classList.remove('animal-playing');}};
+ const failed=()=>{if(animalCall!==call)return;ended();$('#voice-note').textContent='Touche le haut-parleur pour écouter le cri.';};
+ call.onended=ended;call.onerror=failed;$('#listen').classList.add('animal-playing');$('#voice-note').textContent='Écoute… Quel animal reconnais-tu ?';call.play().catch(failed);
+}
+function choosePreschool(value,button){
+ if(locked||!current||button.disabled)return;
+ cancelShadowDrag();
+ if(value!==current.target){button.disabled=true;button.classList.add('removed');button.setAttribute('aria-hidden','true');button.setAttribute('aria-pressed','false');selectedShadow=null;readingError();$('#feedback').textContent='Un choix en moins. Essaie encore !';return;}
+ stopAnimalCall();button.classList.add('correct');
+ if(activeActivity==='shadows'){$('#shadow-target').classList.add('shadow-awake');$('#shadow-target').setAttribute('aria-label','Bravo, l’objet s’anime !');}
+ finishReading(nextPreschool,null,activeActivity==='shadows'&&state.motion?1000:0);
+}
+function selectShadow(value,button){
+ if(locked||button.disabled)return;selectedShadow={value,button};
+ $$('#choices button').forEach(item=>{item.classList.toggle('shadow-selected',item===button);item.setAttribute('aria-pressed',String(item===button));});
+ $('#shadow-target').classList.add('shadow-chosen');$('#feedback').textContent='Maintenant, touche l’objet.';
+}
+function wireShadow(button,value){
+ let suppressClick=false;
+ button.onclick=()=>{if(suppressClick){suppressClick=false;return;}selectShadow(value,button);};
+ button.onpointerdown=e=>{
+  if(locked||button.disabled||!e.isPrimary||e.button!==0)return;cancelShadowDrag();suppressClick=false;
+  shadowDrag={button,value,pointerId:e.pointerId,startX:e.clientX,startY:e.clientY,moved:false,ghost:null};button.setPointerCapture(e.pointerId);
+ };
+ button.onpointermove=e=>{
+  const drag=shadowDrag;if(!drag||drag.pointerId!==e.pointerId)return;
+  if(!drag.moved&&Math.hypot(e.clientX-drag.startX,e.clientY-drag.startY)<8)return;
+  if(!drag.moved){drag.moved=true;drag.ghost=document.createElement('div');drag.ghost.className='shadow-ghost';drag.ghost.innerHTML=shadowMarkup(value,true);drag.ghost.setAttribute('aria-hidden','true');document.body.append(drag.ghost);button.classList.add('dragging-shadow');}
+  drag.ghost.style.left=e.clientX+'px';drag.ghost.style.top=e.clientY+'px';
+  const target=$('#shadow-target');target.classList.toggle('drop-ready',onShadowTarget({x:e.clientX,y:e.clientY},target.getBoundingClientRect()));
+ };
+ button.onpointerup=e=>{
+  const drag=shadowDrag;if(!drag||drag.pointerId!==e.pointerId)return;
+  const dropped=drag.moved&&onShadowTarget({x:e.clientX,y:e.clientY},$('#shadow-target').getBoundingClientRect());suppressClick=drag.moved;cancelShadowDrag();
+  if(dropped)choosePreschool(value,button);
+ };
+ button.onpointercancel=cancelShadowDrag;button.onlostpointercapture=()=>{if(shadowDrag?.button===button)cancelShadowDrag();};
+}
