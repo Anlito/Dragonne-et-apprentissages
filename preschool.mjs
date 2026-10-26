@@ -9,7 +9,177 @@ export const SHAPES=[
  {id:'oval',name:'l’ovale',path:'M50 25a40 25 0 1 0 0 50a40 25 0 1 0 0-50'},
  {id:'diamond',name:'le losange',path:'M50 7 81 50 50 93 19 50Z'}
 ];
-export const SOUND_ANIMALS=[['cat','Le chat'],['dog','Le chien'],['cow','La vache'],['duck','Le canard'],['sheep','Le mouton'],['horse','Le cheval']].map(([id,name],tile)=>({id,name,tile,audio:'assets/audio/'+id+(id==='duck'?'.mp3':'.ogg')}));
+export const SOUND_ANIMALS=[['cat','Le chat'],['dog','Le chien'],['cow','La vache'],['duck','Le canard'],['sheep','Le mouton'],['horse','Le cheval']].map(([id,name],tile)=>({id,name,tile,sprite:'assets/animaux-sons.png',audio:'assets/audio/'+id+(id==='duck'?'.mp3':'.ogg')}));
+SOUND_ANIMALS.push(...[
+ {
+  "id": "pig",
+  "name": "Le cochon",
+  "audio": "assets/audio/pig.ogg",
+  "sprite": "assets/animaux-sons-2.png",
+  "tile": 0
+ },
+ {
+  "id": "rooster",
+  "name": "Le coq",
+  "audio": "assets/audio/rooster.ogg",
+  "sprite": "assets/animaux-sons-2.png",
+  "tile": 1
+ },
+ {
+  "id": "donkey",
+  "name": "L’âne",
+  "audio": "assets/audio/donkey.ogg",
+  "sprite": "assets/animaux-sons-2.png",
+  "tile": 2
+ },
+ {
+  "id": "goat",
+  "name": "La chèvre",
+  "audio": "assets/audio/goat.ogg",
+  "sprite": "assets/animaux-sons-2.png",
+  "tile": 3
+ },
+ {
+  "id": "goose",
+  "name": "L’oie",
+  "audio": "assets/audio/goose.ogg",
+  "sprite": "assets/animaux-sons-2.png",
+  "tile": 4
+ },
+ {
+  "id": "turkey",
+  "name": "Le dindon",
+  "audio": "assets/audio/turkey.ogg",
+  "sprite": "assets/animaux-sons-2.png",
+  "tile": 5
+ },
+ {
+  "id": "lion",
+  "name": "Le lion",
+  "audio": "assets/audio/lion.ogg",
+  "sprite": "assets/animaux-sons-3.png",
+  "tile": 0
+ },
+ {
+  "id": "tiger",
+  "name": "Le tigre",
+  "audio": "assets/audio/tiger.wav",
+  "sprite": "assets/animaux-sons-3.png",
+  "tile": 1
+ },
+ {
+  "id": "elephant",
+  "name": "L’éléphant",
+  "audio": "assets/audio/elephant.ogg",
+  "sprite": "assets/animaux-sons-3.png",
+  "tile": 2
+ },
+ {
+  "id": "wolf",
+  "name": "Le loup",
+  "audio": "assets/audio/wolf.ogg",
+  "sprite": "assets/animaux-sons-3.png",
+  "tile": 3
+ },
+ {
+  "id": "bear",
+  "name": "L’ours",
+  "audio": "assets/audio/bear.ogg",
+  "sprite": "assets/animaux-sons-3.png",
+  "tile": 4
+ },
+ {
+  "id": "monkey",
+  "name": "Le singe",
+  "audio": "assets/audio/monkey.ogg",
+  "sprite": "assets/animaux-sons-3.png",
+  "tile": 5
+ },
+ {
+  "id": "owl",
+  "name": "Le hibou",
+  "audio": "assets/audio/owl.mp3",
+  "sprite": "assets/animaux-sons-4.png",
+  "tile": 0
+ },
+ {
+  "id": "parrot",
+  "name": "Le perroquet",
+  "audio": "assets/audio/parrot.mp3",
+  "sprite": "assets/animaux-sons-4.png",
+  "tile": 1
+ },
+ {
+  "id": "crow",
+  "name": "Le corbeau",
+  "audio": "assets/audio/crow.ogg",
+  "sprite": "assets/animaux-sons-4.png",
+  "tile": 2
+ },
+ {
+  "id": "peacock",
+  "name": "Le paon",
+  "audio": "assets/audio/peacock.ogg",
+  "sprite": "assets/animaux-sons-4.png",
+  "tile": 3
+ },
+ {
+  "id": "frog",
+  "name": "La grenouille",
+  "audio": "assets/audio/frog.oga",
+  "sprite": "assets/animaux-sons-4.png",
+  "tile": 4
+ },
+ {
+  "id": "bee",
+  "name": "Le bourdon",
+  "audio": "assets/audio/bee.ogg",
+  "sprite": "assets/animaux-sons-4.png",
+  "tile": 5
+ },
+ {
+  "id": "cricket",
+  "name": "Le grillon",
+  "audio": "assets/audio/cricket.ogg",
+  "sprite": "assets/animaux-sons-5.png",
+  "tile": 0
+ },
+ {
+  "id": "dolphin",
+  "name": "Le dauphin",
+  "audio": "assets/audio/dolphin.wav",
+  "sprite": "assets/animaux-sons-5.png",
+  "tile": 1
+ },
+ {
+  "id": "whale",
+  "name": "La baleine",
+  "audio": "assets/audio/whale.oga",
+  "sprite": "assets/animaux-sons-5.png",
+  "tile": 2
+ },
+ {
+  "id": "seal",
+  "name": "L’otarie",
+  "audio": "assets/audio/seal.ogg",
+  "sprite": "assets/animaux-sons-5.png",
+  "tile": 3
+ },
+ {
+  "id": "snake",
+  "name": "Le serpent à sonnette",
+  "audio": "assets/audio/snake.ogg",
+  "sprite": "assets/animaux-sons-5.png",
+  "tile": 4
+ },
+ {
+  "id": "fox",
+  "name": "Le renard",
+  "audio": "assets/audio/fox.mp3",
+  "sprite": "assets/animaux-sons-5.png",
+  "tile": 5
+ }
+]);
 // Every coloured piece is reused unchanged in the silhouette, including its outline.
 export const SHADOW_OBJECTS=[
  {id:'boat',name:'Le bateau',parts:[['#af8056','M12 70H88L76 88H26Z'],['#a6b984','M47 16V65H13Z'],['#b7a4cd','M54 24 83 65H54Z'],['#795e48','M47 12H53V72H47Z'],['#e3ba65','M53 12 75 19 53 27Z']]},
@@ -54,7 +224,9 @@ const shuffled=(values,random)=>{const out=[...values];for(let i=out.length-1;i>
 export function preschoolQuestion(kind,level='easy',previous=null,random=Math.random){
  if(!PRESCHOOL_IDS.includes(kind))throw new Error('Unknown preschool activity');
  const pool=kind==='shapes'?SHAPES:kind==='animal-sounds'?SOUND_ANIMALS:SHADOW_OBJECTS;
- const target=shuffled(pool.filter(item=>item.id!==previous),random)[0];
+ const excluded=new Set(Array.isArray(previous)?previous:[previous]);
+ const available=pool.filter(item=>!excluded.has(item.id));
+ const target=shuffled(available.length?available:pool,random)[0];
  const alternatives=kind==='shadows'?SHADOW_DISTRACTORS[target.id].map(id=>pool.find(item=>item.id===id)):shuffled(pool.filter(item=>item!==target),random);
  const choices=shuffled([target,...alternatives.slice(0,preschoolChoices(level)-1)],random).map(item=>item.id);
  return {kind,id:target.id,target:target.id,choices,prompt:kind==='shapes'?'Trouve '+target.name+'.':PRESCHOOL_META[kind].instruction};

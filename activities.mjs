@@ -2,6 +2,7 @@
 export const ACTIVITIES=[
   {id:'challenge',button:'challenge-start',label:'Mon défi · 20 exercices',specialTile:1},
   ...[['shapes','Les formes'],['animal-sounds','Les cris des animaux'],['shadows','Le puzzle des ombres']].map(([id,label],preschoolTile)=>({id,button:id+'-start',label,preschoolTile})),
+  ...[['differences','Le jeu des différences'],['observation','Observe bien !']].map(([id,label],sceneTile)=>({id,button:id+'-start',label,sceneTile})),
   {id:'letters',button:'letters',label:'Les lettres',tile:0},
   {id:'memory',button:'memory-start',label:'Les paires',tile:1},
   {id:'numbers',button:'numbers-start',label:'Les chiffres',tile:2},
