@@ -130,7 +130,9 @@ const rows=[
  ['polar',[['igloo','L’igloo','l’igloo'],['icebreaker','Le bateau des glaces','la coque du bateau'],['colony','Les manchots','le grand iceberg'],['icepalace','Le palais de glace','le palais de glace']]],
  ['ocean',[['reef','Le récif de corail','le grand corail'],['wreck','L’épave','la coque de l’épave'],['submarine','Le sous-marin','le sous-marin'],['treasure','Le trésor englouti','le couvercle du coffre']]]
 ];
-export const SCENE_CATALOG=rows.flatMap(([world,items])=>items.map(([hero,name,heroName])=>({id:hero,world,name,hero,heroName})));
+const BASE_SCENES=rows.flatMap(([world,items])=>items.map(([hero,name,heroName])=>({id:hero,world,name,hero,heroName})));
+const VIEWS=['première découverte','autre point de vue','nouvelle exploration'];
+export const SCENE_CATALOG=Array.from({length:100},(_,index)=>{const base=BASE_SCENES[index%BASE_SCENES.length],variation=Math.floor(index/BASE_SCENES.length);return {...base,id:base.id+(variation?'-'+(variation+1):''),name:base.name+(variation?' · '+VIEWS[variation]:''),layout:index,variation};});
 export const sceneTheme=value=>SCENE_CATALOG.find(t=>t.id===value)||SCENE_CATALOG[0];
 export function chooseSceneTheme(history=[],random=Math.random){const remaining=SCENE_CATALOG.filter(t=>!history.includes(t.id));return (remaining.length?remaining:SCENE_CATALOG.filter(t=>t.id!==history.at(-1)))[Math.floor(random()*(remaining.length||SCENE_CATALOG.length-1))].id;}
 
@@ -148,7 +150,7 @@ export function sceneBackdrop(themeId){
   ocean:path('M0 275Q150 234 300 282Q480 232 600 280V340H0Z','#ded0ab')+line('M7 265Q22 185 8 125M584 270Q568 198 591 141M557 266Q545 203 555 177','#7aab90',9)+[ [20,50,9],[175,30,6],[340,140,8],[564,80,12],[415,75,5]].map(([x,y,r])=>`<circle cx="${x}" cy="${y}" r="${r}" fill="none" stroke="#cee3db" stroke-width="3"/>`).join('')
  };
  // A small motif and a distinct landmark make each of the 36 compositions identifiable.
- return `<svg class="scene-backdrop" viewBox="0 0 600 340" preserveAspectRatio="none" aria-hidden="true"><rect width="600" height="340" fill="${w.sky}"/>${backgrounds[t.world]}</svg>`;
+ return `<svg class="scene-backdrop" viewBox="0 0 600 340" preserveAspectRatio="none" aria-hidden="true"><rect width="600" height="340" fill="${w.sky}"/>${backgrounds[t.world]}${t.variation?`<path d="M0 ${285-t.variation*18}Q160 ${240-t.variation*20} 300 282T600 265V340H0Z" fill="${w.ground}" opacity=".42"/>`:""}</svg>`;
 }
 
 export function themedSlotMarkup(id,value,themeId,colors){

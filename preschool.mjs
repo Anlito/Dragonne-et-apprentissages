@@ -1,5 +1,6 @@
-export const PRESCHOOL_IDS=['shapes','animal-sounds','shadows'];
-export const PRESCHOOL_META={shapes:{label:'Les formes',title:'Écoute et trouve la forme',instruction:'Touche la forme que tu entends.'},'animal-sounds':{label:'Les cris des animaux',title:'Qui fait ce bruit ?',instruction:'Écoute le cri, puis touche le bon animal.'},shadows:{label:'Le puzzle des ombres',title:'Retrouve mon ombre',instruction:'Glisse la bonne ombre sur l’objet. Tu peux aussi toucher l’ombre, puis l’objet.'}};
+import {colorQuestion} from './colors.mjs';
+export const PRESCHOOL_IDS=['shapes','animal-sounds','shadows','colors'];
+export const PRESCHOOL_META={colors:{label:'Le mélange des couleurs',title:'Quelle couleur va apparaître ?',instruction:'Mélange les deux peintures et trouve la nouvelle couleur.'},shapes:{label:'Les formes',title:'Écoute et trouve la forme',instruction:'Touche la forme que tu entends.'},'animal-sounds':{label:'Les cris des animaux',title:'Qui fait ce bruit ?',instruction:'Écoute le cri, puis touche le bon animal.'},shadows:{label:'Le puzzle des ombres',title:'Retrouve mon ombre',instruction:'Glisse la bonne ombre sur l’objet. Tu peux aussi toucher l’ombre, puis l’objet.'}};
 export const preschoolChoices=level=>({easy:2,medium:3,hard:4})[level]||2;
 export const SHAPES=[
  {id:'square',name:'le carré',path:'M20 20H80V80H20Z'},
@@ -180,6 +181,638 @@ SOUND_ANIMALS.push(...[
   "tile": 5
  }
 ]);
+SOUND_ANIMALS.push(...[
+ {
+  "id": "alligator",
+  "name": "L’alligator",
+  "audio": "assets/audio/alligator.ogg",
+  "sprite": "assets/animaux-100-1.png",
+  "tile": 0,
+  "cols": 5,
+  "rows": 2
+ },
+ {
+  "id": "woodcock",
+  "name": "La bécasse",
+  "audio": "assets/audio/woodcock.ogg",
+  "sprite": "assets/animaux-100-1.png",
+  "tile": 1,
+  "cols": 5,
+  "rows": 2
+ },
+ {
+  "id": "impala",
+  "name": "L’impala",
+  "audio": "assets/audio/impala.ogg",
+  "sprite": "assets/animaux-100-1.png",
+  "tile": 2,
+  "cols": 5,
+  "rows": 2
+ },
+ {
+  "id": "australian-magpie",
+  "name": "Le cassican",
+  "audio": "assets/audio/australian-magpie.ogg",
+  "sprite": "assets/animaux-100-1.png",
+  "tile": 3,
+  "cols": 5,
+  "rows": 2
+ },
+ {
+  "id": "badger",
+  "name": "Le blaireau",
+  "audio": "assets/audio/badger.ogg",
+  "sprite": "assets/animaux-100-1.png",
+  "tile": 4,
+  "cols": 5,
+  "rows": 2
+ },
+ {
+  "id": "bat",
+  "name": "La chauve-souris",
+  "audio": "assets/audio/bat.ogg",
+  "sprite": "assets/animaux-100-1.png",
+  "tile": 5,
+  "cols": 5,
+  "rows": 2
+ },
+ {
+  "id": "bison",
+  "name": "Le bison",
+  "audio": "assets/audio/bison.ogg",
+  "sprite": "assets/animaux-100-1.png",
+  "tile": 6,
+  "cols": 5,
+  "rows": 2
+ },
+ {
+  "id": "camel",
+  "name": "Le chameau",
+  "audio": "assets/audio/camel.ogg",
+  "sprite": "assets/animaux-100-1.png",
+  "tile": 7,
+  "cols": 5,
+  "rows": 2
+ },
+ {
+  "id": "hen",
+  "name": "La poule",
+  "audio": "assets/audio/hen.ogg",
+  "sprite": "assets/animaux-100-1.png",
+  "tile": 8,
+  "cols": 5,
+  "rows": 2
+ },
+ {
+  "id": "cicada",
+  "name": "La cigale",
+  "audio": "assets/audio/cicada.ogg",
+  "sprite": "assets/animaux-100-1.png",
+  "tile": 9,
+  "cols": 5,
+  "rows": 2
+ },
+ {
+  "id": "coyote",
+  "name": "Le coyote",
+  "audio": "assets/audio/coyote.ogg",
+  "sprite": "assets/animaux-100-2.png",
+  "tile": 0,
+  "cols": 5,
+  "rows": 2
+ },
+ {
+  "id": "crane",
+  "name": "La grue",
+  "audio": "assets/audio/crane.ogg",
+  "sprite": "assets/animaux-100-2.png",
+  "tile": 1,
+  "cols": 5,
+  "rows": 2
+ },
+ {
+  "id": "curlew",
+  "name": "Le courlis",
+  "audio": "assets/audio/curlew.ogg",
+  "sprite": "assets/animaux-100-2.png",
+  "tile": 2,
+  "cols": 5,
+  "rows": 2
+ },
+ {
+  "id": "deer",
+  "name": "Le cerf",
+  "audio": "assets/audio/deer.ogg",
+  "sprite": "assets/animaux-100-2.png",
+  "tile": 3,
+  "cols": 5,
+  "rows": 2
+ },
+ {
+  "id": "eagle",
+  "name": "Le pygargue",
+  "audio": "assets/audio/eagle.ogg",
+  "sprite": "assets/animaux-100-2.png",
+  "tile": 4,
+  "cols": 5,
+  "rows": 2
+ },
+ {
+  "id": "elk",
+  "name": "Le wapiti",
+  "audio": "assets/audio/elk.ogg",
+  "sprite": "assets/animaux-100-2.png",
+  "tile": 5,
+  "cols": 5,
+  "rows": 2
+ },
+ {
+  "id": "giraffe",
+  "name": "La girafe",
+  "audio": "assets/audio/giraffe.ogg",
+  "sprite": "assets/animaux-100-2.png",
+  "tile": 6,
+  "cols": 5,
+  "rows": 2
+ },
+ {
+  "id": "grasshopper",
+  "name": "La sauterelle",
+  "audio": "assets/audio/grasshopper.ogg",
+  "sprite": "assets/animaux-100-2.png",
+  "tile": 7,
+  "cols": 5,
+  "rows": 2
+ },
+ {
+  "id": "guinea-pig",
+  "name": "Le cochon d’Inde",
+  "audio": "assets/audio/guinea-pig.ogg",
+  "sprite": "assets/animaux-100-2.png",
+  "tile": 8,
+  "cols": 5,
+  "rows": 2
+ },
+ {
+  "id": "hawk",
+  "name": "La buse",
+  "audio": "assets/audio/hawk.ogg",
+  "sprite": "assets/animaux-100-2.png",
+  "tile": 9,
+  "cols": 5,
+  "rows": 2
+ },
+ {
+  "id": "hyena",
+  "name": "La hyène",
+  "audio": "assets/audio/hyena.ogg",
+  "sprite": "assets/animaux-100-3.png",
+  "tile": 0,
+  "cols": 5,
+  "rows": 2
+ },
+ {
+  "id": "jackal",
+  "name": "Le chacal",
+  "audio": "assets/audio/jackal.ogg",
+  "sprite": "assets/animaux-100-3.png",
+  "tile": 1,
+  "cols": 5,
+  "rows": 2
+ },
+ {
+  "id": "kookaburra",
+  "name": "Le kookaburra",
+  "audio": "assets/audio/kookaburra.ogg",
+  "sprite": "assets/animaux-100-3.png",
+  "tile": 2,
+  "cols": 5,
+  "rows": 2
+ },
+ {
+  "id": "lemur",
+  "name": "Le lémurien",
+  "audio": "assets/audio/lemur.ogg",
+  "sprite": "assets/animaux-100-3.png",
+  "tile": 3,
+  "cols": 5,
+  "rows": 2
+ },
+ {
+  "id": "linnet",
+  "name": "La linotte",
+  "audio": "assets/audio/linnet.ogg",
+  "sprite": "assets/animaux-100-3.png",
+  "tile": 4,
+  "cols": 5,
+  "rows": 2
+ },
+ {
+  "id": "magpie",
+  "name": "La pie",
+  "audio": "assets/audio/magpie.ogg",
+  "sprite": "assets/animaux-100-3.png",
+  "tile": 5,
+  "cols": 5,
+  "rows": 2
+ },
+ {
+  "id": "mosquito",
+  "name": "Le moustique",
+  "audio": "assets/audio/mosquito.ogg",
+  "sprite": "assets/animaux-100-3.png",
+  "tile": 6,
+  "cols": 5,
+  "rows": 2
+ },
+ {
+  "id": "mouse",
+  "name": "La souris",
+  "audio": "assets/audio/mouse.ogg",
+  "sprite": "assets/animaux-100-3.png",
+  "tile": 7,
+  "cols": 5,
+  "rows": 2
+ },
+ {
+  "id": "penguin",
+  "name": "Le manchot",
+  "audio": "assets/audio/penguin.ogg",
+  "sprite": "assets/animaux-100-3.png",
+  "tile": 8,
+  "cols": 5,
+  "rows": 2
+ },
+ {
+  "id": "pigeon",
+  "name": "Le pigeon",
+  "audio": "assets/audio/pigeon.ogg",
+  "sprite": "assets/animaux-100-3.png",
+  "tile": 9,
+  "cols": 5,
+  "rows": 2
+ },
+ {
+  "id": "prairie-dog",
+  "name": "Le chien de prairie",
+  "audio": "assets/audio/prairie-dog.ogg",
+  "sprite": "assets/animaux-100-4.png",
+  "tile": 0,
+  "cols": 5,
+  "rows": 2
+ },
+ {
+  "id": "quail",
+  "name": "La caille",
+  "audio": "assets/audio/quail.ogg",
+  "sprite": "assets/animaux-100-4.png",
+  "tile": 1,
+  "cols": 5,
+  "rows": 2
+ },
+ {
+  "id": "rabbit",
+  "name": "Le lapin",
+  "audio": "assets/audio/rabbit.ogg",
+  "sprite": "assets/animaux-100-4.png",
+  "tile": 2,
+  "cols": 5,
+  "rows": 2
+ },
+ {
+  "id": "raccoon",
+  "name": "Le raton laveur",
+  "audio": "assets/audio/raccoon.ogg",
+  "sprite": "assets/animaux-100-4.png",
+  "tile": 3,
+  "cols": 5,
+  "rows": 2
+ },
+ {
+  "id": "raven",
+  "name": "Le grand corbeau",
+  "audio": "assets/audio/raven.ogg",
+  "sprite": "assets/animaux-100-4.png",
+  "tile": 4,
+  "cols": 5,
+  "rows": 2
+ },
+ {
+  "id": "rook",
+  "name": "Le corbeau freux",
+  "audio": "assets/audio/rook.ogg",
+  "sprite": "assets/animaux-100-4.png",
+  "tile": 5,
+  "cols": 5,
+  "rows": 2
+ },
+ {
+  "id": "goldfinch",
+  "name": "Le chardonneret",
+  "audio": "assets/audio/goldfinch.ogg",
+  "sprite": "assets/animaux-100-4.png",
+  "tile": 6,
+  "cols": 5,
+  "rows": 2
+ },
+ {
+  "id": "squirrel",
+  "name": "L’écureuil",
+  "audio": "assets/audio/squirrel.ogg",
+  "sprite": "assets/animaux-100-4.png",
+  "tile": 7,
+  "cols": 5,
+  "rows": 2
+ },
+ {
+  "id": "swan",
+  "name": "Le cygne",
+  "audio": "assets/audio/swan.ogg",
+  "sprite": "assets/animaux-100-4.png",
+  "tile": 8,
+  "cols": 5,
+  "rows": 2
+ },
+ {
+  "id": "gecko",
+  "name": "Le gecko",
+  "audio": "assets/audio/gecko.ogg",
+  "sprite": "assets/animaux-100-4.png",
+  "tile": 9,
+  "cols": 5,
+  "rows": 2
+ },
+ {
+  "id": "boar",
+  "name": "Le sanglier",
+  "audio": "assets/audio/boar.ogg",
+  "sprite": "assets/animaux-100-5.png",
+  "tile": 0,
+  "cols": 5,
+  "rows": 2
+ },
+ {
+  "id": "robin",
+  "name": "Le rouge-gorge",
+  "audio": "assets/audio/robin.ogg",
+  "sprite": "assets/animaux-100-5.png",
+  "tile": 1,
+  "cols": 5,
+  "rows": 2
+ },
+ {
+  "id": "blackbird",
+  "name": "Le merle",
+  "audio": "assets/audio/blackbird.ogg",
+  "sprite": "assets/animaux-100-5.png",
+  "tile": 2,
+  "cols": 5,
+  "rows": 2
+ },
+ {
+  "id": "blue-tit",
+  "name": "La mésange bleue",
+  "audio": "assets/audio/blue-tit.ogg",
+  "sprite": "assets/animaux-100-5.png",
+  "tile": 3,
+  "cols": 5,
+  "rows": 2
+ },
+ {
+  "id": "great-tit",
+  "name": "La mésange charbonnière",
+  "audio": "assets/audio/great-tit.ogg",
+  "sprite": "assets/animaux-100-5.png",
+  "tile": 4,
+  "cols": 5,
+  "rows": 2
+ },
+ {
+  "id": "nightingale",
+  "name": "Le rossignol",
+  "audio": "assets/audio/nightingale.ogg",
+  "sprite": "assets/animaux-100-5.png",
+  "tile": 5,
+  "cols": 5,
+  "rows": 2
+ },
+ {
+  "id": "cuckoo",
+  "name": "Le coucou",
+  "audio": "assets/audio/cuckoo.ogg",
+  "sprite": "assets/animaux-100-5.png",
+  "tile": 6,
+  "cols": 5,
+  "rows": 2
+ },
+ {
+  "id": "woodpecker",
+  "name": "Le pic épeiche",
+  "audio": "assets/audio/woodpecker.ogg",
+  "sprite": "assets/animaux-100-5.png",
+  "tile": 7,
+  "cols": 5,
+  "rows": 2
+ },
+ {
+  "id": "stork",
+  "name": "La cigogne",
+  "audio": "assets/audio/stork.ogg",
+  "sprite": "assets/animaux-100-5.png",
+  "tile": 8,
+  "cols": 5,
+  "rows": 2
+ },
+ {
+  "id": "flamingo",
+  "name": "Le flamant rose",
+  "audio": "assets/audio/flamingo.ogg",
+  "sprite": "assets/animaux-100-5.png",
+  "tile": 9,
+  "cols": 5,
+  "rows": 2
+ },
+ {
+  "id": "heron",
+  "name": "Le héron",
+  "audio": "assets/audio/heron.ogg",
+  "sprite": "assets/animaux-100-6.png",
+  "tile": 0,
+  "cols": 5,
+  "rows": 2
+ },
+ {
+  "id": "kingfisher",
+  "name": "Le martin-pêcheur",
+  "audio": "assets/audio/kingfisher.ogg",
+  "sprite": "assets/animaux-100-6.png",
+  "tile": 1,
+  "cols": 5,
+  "rows": 2
+ },
+ {
+  "id": "seagull",
+  "name": "La mouette",
+  "audio": "assets/audio/seagull.ogg",
+  "sprite": "assets/animaux-100-6.png",
+  "tile": 2,
+  "cols": 5,
+  "rows": 2
+ },
+ {
+  "id": "pelican",
+  "name": "Le pélican",
+  "audio": "assets/audio/pelican.ogg",
+  "sprite": "assets/animaux-100-6.png",
+  "tile": 3,
+  "cols": 5,
+  "rows": 2
+ },
+ {
+  "id": "jaguar",
+  "name": "Le jaguar",
+  "audio": "assets/audio/jaguar.ogg",
+  "sprite": "assets/animaux-100-6.png",
+  "tile": 4,
+  "cols": 5,
+  "rows": 2
+ },
+ {
+  "id": "puffin",
+  "name": "Le macareux",
+  "audio": "assets/audio/puffin.ogg",
+  "sprite": "assets/animaux-100-6.png",
+  "tile": 5,
+  "cols": 5,
+  "rows": 2
+ },
+ {
+  "id": "toucan",
+  "name": "Le toucan",
+  "audio": "assets/audio/toucan.ogg",
+  "sprite": "assets/animaux-100-6.png",
+  "tile": 6,
+  "cols": 5,
+  "rows": 2
+ },
+ {
+  "id": "swallow",
+  "name": "L’hirondelle",
+  "audio": "assets/audio/swallow.ogg",
+  "sprite": "assets/animaux-100-6.png",
+  "tile": 7,
+  "cols": 5,
+  "rows": 2
+ },
+ {
+  "id": "swift",
+  "name": "Le martinet",
+  "audio": "assets/audio/swift.ogg",
+  "sprite": "assets/animaux-100-6.png",
+  "tile": 8,
+  "cols": 5,
+  "rows": 2
+ },
+ {
+  "id": "sparrow",
+  "name": "Le moineau",
+  "audio": "assets/audio/sparrow.ogg",
+  "sprite": "assets/animaux-100-6.png",
+  "tile": 9,
+  "cols": 5,
+  "rows": 2
+ },
+ {
+  "id": "chaffinch",
+  "name": "Le pinson",
+  "audio": "assets/audio/chaffinch.ogg",
+  "sprite": "assets/animaux-100-7.png",
+  "tile": 0,
+  "cols": 5,
+  "rows": 2
+ },
+ {
+  "id": "canary",
+  "name": "Le canari",
+  "audio": "assets/audio/canary.ogg",
+  "sprite": "assets/animaux-100-7.png",
+  "tile": 1,
+  "cols": 5,
+  "rows": 2
+ },
+ {
+  "id": "budgie",
+  "name": "La perruche",
+  "audio": "assets/audio/budgie.ogg",
+  "sprite": "assets/animaux-100-7.png",
+  "tile": 2,
+  "cols": 5,
+  "rows": 2
+ },
+ {
+  "id": "hoopoe",
+  "name": "La huppe",
+  "audio": "assets/audio/hoopoe.ogg",
+  "sprite": "assets/animaux-100-7.png",
+  "tile": 3,
+  "cols": 5,
+  "rows": 2
+ },
+ {
+  "id": "lapwing",
+  "name": "Le vanneau",
+  "audio": "assets/audio/lapwing.ogg",
+  "sprite": "assets/animaux-100-7.png",
+  "tile": 4,
+  "cols": 5,
+  "rows": 2
+ },
+ {
+  "id": "snipe",
+  "name": "La bécassine",
+  "audio": "assets/audio/snipe.ogg",
+  "sprite": "assets/animaux-100-7.png",
+  "tile": 5,
+  "cols": 5,
+  "rows": 2
+ },
+ {
+  "id": "wren",
+  "name": "Le troglodyte",
+  "audio": "assets/audio/wren.ogg",
+  "sprite": "assets/animaux-100-7.png",
+  "tile": 6,
+  "cols": 5,
+  "rows": 2
+ },
+ {
+  "id": "nuthatch",
+  "name": "La sittelle",
+  "audio": "assets/audio/nuthatch.ogg",
+  "sprite": "assets/animaux-100-7.png",
+  "tile": 7,
+  "cols": 5,
+  "rows": 2
+ },
+ {
+  "id": "skylark",
+  "name": "L’alouette",
+  "audio": "assets/audio/skylark.ogg",
+  "sprite": "assets/animaux-100-7.png",
+  "tile": 8,
+  "cols": 5,
+  "rows": 2
+ },
+ {
+  "id": "bee-eater",
+  "name": "Le guêpier",
+  "audio": "assets/audio/bee-eater.ogg",
+  "sprite": "assets/animaux-100-7.png",
+  "tile": 9,
+  "cols": 5,
+  "rows": 2
+ }
+]);
 // Every coloured piece is reused unchanged in the silhouette, including its outline.
 export const SHADOW_OBJECTS=[
  {id:'boat',name:'Le bateau',parts:[['#af8056','M12 70H88L76 88H26Z'],['#a6b984','M47 16V65H13Z'],['#b7a4cd','M54 24 83 65H54Z'],['#795e48','M47 12H53V72H47Z'],['#e3ba65','M53 12 75 19 53 27Z']]},
@@ -220,14 +853,17 @@ export const SHADOW_DISTRACTORS={
  apple:['flower','fish-round','icecream'],cup:['cup-nohandle','umbrella','car'],
  'cup-nohandle':['cup','icecream','house'],icecream:['rocket-no-fins','flower','parasol']
 };
+const SIMILAR_ANIMALS=[['crow','raven','rook','blackbird'],['wolf','dog','coyote','jackal'],['lion','tiger','jaguar','bear'],['sheep','goat'],['linnet','nightingale','wren','skylark','sparrow'],['woodcock','snipe','curlew'],['blue-tit','great-tit']];
+const sameSoundFamily=(a,b)=>SIMILAR_ANIMALS.some(group=>group.includes(a)&&group.includes(b));
 const shuffled=(values,random)=>{const out=[...values];for(let i=out.length-1;i>0;i--){const j=Math.floor(random()*(i+1));[out[i],out[j]]=[out[j],out[i]];}return out;};
 export function preschoolQuestion(kind,level='easy',previous=null,random=Math.random){
+ if(kind==='colors')return colorQuestion(level,previous,random);
  if(!PRESCHOOL_IDS.includes(kind))throw new Error('Unknown preschool activity');
  const pool=kind==='shapes'?SHAPES:kind==='animal-sounds'?SOUND_ANIMALS:SHADOW_OBJECTS;
  const excluded=new Set(Array.isArray(previous)?previous:[previous]);
  const available=pool.filter(item=>!excluded.has(item.id));
  const target=shuffled(available.length?available:pool,random)[0];
- const alternatives=kind==='shadows'?SHADOW_DISTRACTORS[target.id].map(id=>pool.find(item=>item.id===id)):shuffled(pool.filter(item=>item!==target),random);
+ const alternatives=kind==='shadows'?SHADOW_DISTRACTORS[target.id].map(id=>pool.find(item=>item.id===id)):shuffled(pool.filter(item=>item!==target&&(kind!=='animal-sounds'||!sameSoundFamily(item.id,target.id))),random);
  const choices=shuffled([target,...alternatives.slice(0,preschoolChoices(level)-1)],random).map(item=>item.id);
  return {kind,id:target.id,target:target.id,choices,prompt:kind==='shapes'?'Trouve '+target.name+'.':PRESCHOOL_META[kind].instruction};
 }

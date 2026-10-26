@@ -1,4 +1,5 @@
-export const ANIMALS=['Le chat','Le chien','Le lapin','L’ours','Le renard','Le panda','Le lion','Le koala','La grenouille','La tortue','Le poisson','La baleine','L’éléphant','La girafe','Le cochon','Le hibou'];
+import {SOUND_ANIMALS} from './preschool.mjs';
+export const ANIMALS=SOUND_ANIMALS.map(animal=>animal.name);
 export function memoryLayout(count,width,height,gap=8){
   const candidates=count===8?[2,4]:[4,8];
   let best=null;
@@ -8,7 +9,7 @@ export function memoryLayout(count,width,height,gap=8){
 function shuffle(items,random){for(let i=items.length-1;i>0;i--){const j=Math.floor(random()*(i+1));[items[i],items[j]]=[items[j],items[i]];}return items;}
 export function createMemory(pairs,random=Math.random){
   if(![4,8,16].includes(pairs))throw new RangeError('Nombre de paires invalide');
-  const animals=shuffle(Array.from({length:16},(_,i)=>i),random).slice(0,pairs);
+  const animals=shuffle(Array.from({length:ANIMALS.length},(_,i)=>i),random).slice(0,pairs);
   return {cards:shuffle(animals.flatMap(animal=>[{animal,matched:false,revealed:false},{animal,matched:false,revealed:false}]),random),flipped:[],mistakes:0,found:0,turns:0,busy:false,pairs};
 }
 export function flipMemory(board,index){

@@ -1,4 +1,4 @@
-export const CHALLENGE_IDS=['differences','observation','shapes','animal-sounds','shadows','letters','numbers','counting','sounds','complete','graphemes','word-listen','link-words','build-word','traps','number-words','arithmetic','multiply','memory','fluency'];
+export const CHALLENGE_IDS=['colors','differences','observation','shapes','animal-sounds','shadows','letters','numbers','counting','sounds','complete','graphemes','word-listen','link-words','build-word','traps','number-words','arithmetic','multiply','memory','fluency'];
 const LONG=['differences','observation','memory','fluency','link-words','build-word'];
 export function cleanChallenge(saved){return Object.fromEntries(CHALLENGE_IDS.map(id=>[id,typeof saved?.[id]==='boolean'?saved[id]:!LONG.includes(id)]));}
 export function challengePlan(settings,visible,random=Math.random){
