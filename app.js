@@ -567,7 +567,7 @@ function nextPreschool(){
  $('#game').classList.remove('question-enter');void $('#game').offsetWidth;$('#game').classList.add('question-enter');
  const board=$('#reading-board'),choices=$('#choices');board.replaceChildren();choices.replaceChildren();choices.style.setProperty('--preschool-count',current.choices.length);
  if(activeActivity==='shadows'){
-  const stage=document.createElement('button');stage.type='button';stage.id='shadow-target';stage.className='shadow-stage';stage.setAttribute('aria-label','Poser l’ombre sélectionnée sur l’objet');stage.innerHTML='<span class="shadow-object">'+shadowMarkup(current.target)+'</span><span class="drop-hint" aria-hidden="true">↓</span><span class="shadow-destination" aria-hidden="true">'+shadowMarkup(current.target,true)+'</span>';
+  const stage=document.createElement('button');stage.type='button';stage.id='shadow-target';stage.className='shadow-stage';stage.setAttribute('aria-label','Poser l’ombre sélectionnée sur l’objet');stage.innerHTML='<span class="shadow-object">'+shadowMarkup(current.target)+'</span>';
   stage.onclick=()=>{if(locked)return;if(!selectedShadow){$('#feedback').textContent='Choisis une ombre, puis touche l’objet.';say('Touche une ombre, puis touche l’objet.');return;}choosePreschool(selectedShadow.value,selectedShadow.button);};board.append(stage);
  }
  const color=['#a7b789','#b7a4cd','#e3bc70','#cd9381'][Math.floor(Math.random()*4)];

@@ -4,6 +4,14 @@ Première version de la PWA Android « Dragonne-et-apprentissages », pensée po
 
 ## Fonctionnement
 
+### 26 octobre 2026 — Ombres sans solution visible (v33)
+
+Le puzzle affiche uniquement l’objet coloré au centre de la cible, sans ombre de référence ni flèche à côté. Les propositions sont choisies pour leurs ressemblances, au lieu d’être tirées parmi tous les objets. La banque contient désormais 20 silhouettes : ajout du bateau à une voile, du parasol, de la montagne, de la maison avec cheminée, du minibus, du poisson rond, du gobelet et de la fusée sans ailerons. Les contours des variantes diffèrent réellement ; chaque bonne ombre reprend exactement le dessin de l’objet demandé.
+
+Pour un bateau à deux voiles, le niveau Difficile propose le bateau à une voile, le parasol et la montagne avec la bonne réponse. Facile conserve 2 choix avec un voisin proche ; Moyen en propose 3 ; Difficile 4. Glisser-déposer, solution par deux touchers, retrait du mauvais choix, points, bonus et sauvegarde restent communs. La configuration des voisins est dans `SHADOW_DISTRACTORS` de `preschool.mjs`, la cible dans `nextPreschool()` de `app.js`. Cache `dragonne-v33`.
+
+Vérifications : `node check-preschool.mjs` couvre les 20 objets, les contours correspondants, les voisins valides, les 2/3/4 choix, l’exemple des deux voiles et l’absence d’ombre de référence dans la cible. `node check-reward-ui.mjs` confirme les récompenses et l’enchaînement. Contrôle visuel sur téléphone dans le navigateur : objet seul, variantes de bateaux et parasol, cibles tactiles conservées. Aucun point ni réglage de profil n’a été modifié par cette évolution.
+
 - Les dix-neuf activités de l’accueil sont jouables : quatre jeux initiaux, trois petits jeux visuels, huit jeux de lecture, deux jeux de mathématiques, la fluence et le défi de 20 exercices, tous activables par profil dans le coin parent.
 - Lettres majuscules A–Z et consigne vocale réécoutable. Le coin parent propose un niveau global : **Facile** (6 lettres), **Moyen** (13 lettres), **Difficile** (26 lettres). Facile est le réglage par défaut. Une grille compacte est utilisée à partir de 13 lettres.
 - Le même profil définit le memory avec 4 / 8 / 16 paires (8 / 16 / 32 cartes), les chiffres avec 3 / 6 / 9 choix et le comptage de 1 à 9 à tous les niveaux, avec 3 / 6 / 9 réponses proposées. Le tableau du coin parent expose ces valeurs.

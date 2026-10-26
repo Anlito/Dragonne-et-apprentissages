@@ -25,12 +25,38 @@ export const SHADOW_OBJECTS=[
  {id:'cup',name:'La tasse',parts:[['#b6a1c8','M60 30H78Q97 30 95 48Q94 67 74 67H64V57H76Q85 57 85 47Q85 40 77 40H65Z'],['#b6a1c8','M14 23H72V62Q72 83 43 83Q14 83 14 62Z'],['#e0bd7b','M8 87H79V93H8Z']]},
  {id:'icecream',name:'La glace',parts:[['#d5ad74','M25 48H75L50 94Z'],['#b7a1c7','M17 48Q9 26 32 23Q39 1 57 15Q83 9 83 34Q97 52 75 56H25Q14 55 17 48Z']]}
 ];
+// Variantes proches : les contours, et pas seulement les couleurs, changent.
+const originalShadow=id=>SHADOW_OBJECTS.find(item=>item.id===id);
+originalShadow('boat').name='Le bateau à deux voiles';
+SHADOW_OBJECTS.push(
+ {id:'boat-single',name:'Le bateau à une voile',parts:originalShadow('boat').parts.filter((_,i)=>i!==2)},
+ {id:'parasol',name:'Le parasol',parts:[['#967b66','M47 38H53V91H47Z'],['#d9b873','M6 45Q50 0 94 45Z']]},
+ {id:'mountain',name:'La montagne',parts:[['#a3b7ad','M7 88 50 12 93 88Z'],['#f0e9db','M36 37 50 12 64 37 54 32 48 40 43 32Z']]},
+ {id:'house-chimney',name:'La maison avec cheminée',parts:[...originalShadow('house').parts,['#af8056','M66 17H78V48H66Z']]},
+ {id:'van',name:'Le minibus',parts:[['#b2bb8e','M12 26H75L90 48V75H12Z'],['#b6cbd0','M60 32H71L81 48H60ZM21 33H49V48H21Z'],...originalShadow('car').parts.slice(2)]},
+ {id:'fish-round',name:'Le poisson rond',parts:[['#a5bbbf','M68 48 94 25V77L68 55Z'],['#e4bb66','M41 19a31 31 0 1 0 0 62a31 31 0 1 0 0-62'],['#63524a','M24 47h4v5h-4Z']]},
+ {id:'cup-nohandle',name:'Le gobelet',parts:originalShadow('cup').parts.slice(1)},
+ {id:'rocket-no-fins',name:'La fusée sans ailerons',parts:originalShadow('rocket').parts.filter((_,i)=>i!==1)}
+);
+export const SHADOW_DISTRACTORS={
+ boat:['boat-single','parasol','mountain'],'boat-single':['boat','parasol','mountain'],
+ tree:['mountain','parasol','flower'],mountain:['tree','boat','parasol'],
+ house:['house-chimney','rocket','mountain'],'house-chimney':['house','rocket','mountain'],
+ umbrella:['parasol','flower','tree'],parasol:['umbrella','boat','mountain'],
+ fish:['fish-round','butterfly','apple'],'fish-round':['fish','apple','butterfly'],
+ butterfly:['flower','fish','tree'],flower:['butterfly','tree','parasol'],
+ rocket:['rocket-no-fins','house','icecream'],'rocket-no-fins':['rocket','house','icecream'],
+ car:['van','house','cup'],van:['car','house','cup'],
+ apple:['flower','fish-round','icecream'],cup:['cup-nohandle','umbrella','car'],
+ 'cup-nohandle':['cup','icecream','house'],icecream:['rocket-no-fins','flower','parasol']
+};
 const shuffled=(values,random)=>{const out=[...values];for(let i=out.length-1;i>0;i--){const j=Math.floor(random()*(i+1));[out[i],out[j]]=[out[j],out[i]];}return out;};
 export function preschoolQuestion(kind,level='easy',previous=null,random=Math.random){
  if(!PRESCHOOL_IDS.includes(kind))throw new Error('Unknown preschool activity');
  const pool=kind==='shapes'?SHAPES:kind==='animal-sounds'?SOUND_ANIMALS:SHADOW_OBJECTS;
  const target=shuffled(pool.filter(item=>item.id!==previous),random)[0];
- const choices=shuffled([target,...shuffled(pool.filter(item=>item!==target),random).slice(0,preschoolChoices(level)-1)],random).map(item=>item.id);
+ const alternatives=kind==='shadows'?SHADOW_DISTRACTORS[target.id].map(id=>pool.find(item=>item.id===id)):shuffled(pool.filter(item=>item!==target),random);
+ const choices=shuffled([target,...alternatives.slice(0,preschoolChoices(level)-1)],random).map(item=>item.id);
  return {kind,id:target.id,target:target.id,choices,prompt:kind==='shapes'?'Trouve '+target.name+'.':PRESCHOOL_META[kind].instruction};
 }
 export function shapeMarkup(id,color='#a7b789'){
