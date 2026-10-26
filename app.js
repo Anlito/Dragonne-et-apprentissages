@@ -1,4 +1,4 @@
-import {dragonAppearance,equipmentMarkup} from './dragon-evolutions.mjs';
+import {dragonAppearance} from './dragon-evolutions.mjs';
 import {CHALLENGE_IDS,challengePlan,uniqueChallengeQuestion} from './challenge.mjs';
 import {DEFAULT_FLUENCY_TEXT,fluencyTokens,fluencyWordCount,fluencyRecord,recordFluencyAttempt,normalizeFluencyText,createFluencyClock} from './fluency.mjs';
 import {MATH_IDS,MATH_LEVELS,placementReward,arithmeticQuestion,multiplicationQuestion} from './maths.mjs';
@@ -36,12 +36,10 @@ let evolutionGate=null;
 let streak=0, completed=0, current=null, mistakes=0, locked=false, turnTimer, evolutionTimer, toastTimer, challengeAnswer, deferredInstall;
 function save(){if(!activeId||!Object.hasOwn(accounts.profiles,activeId))return;try{accounts.activeId=activeId;accounts.profiles[activeId]=state;localStorage.setItem(PROFILES_KEY,JSON.stringify(accounts));renderProfileChoices();}catch{$('#storage-note').textContent='Le navigateur ne permet pas de conserver la progression. Elle reste disponible pendant cette partie.';}}
 function setDragon(el,rank,id=state.dragonId){
- const look=dragonAppearance(rank),dragon=DRAGONS[id];el.style.backgroundImage="url('"+(look.atlas==='classic'?dragon.sprite:dragon.adventures)+"')";
- el.style.backgroundSize=(look.columns*100)+'% '+(look.rows*100)+'%';el.style.backgroundPosition=((look.cell%look.columns)*100/(look.columns-1))+'% '+(Math.floor(look.cell/look.columns)*100/(look.rows-1))+'%';
+ const look=dragonAppearance(rank);el.style.backgroundImage="url('assets/evolutions/"+id+'/stage-'+(look.cell+1)+".png')";
+ el.style.backgroundSize='contain';el.style.backgroundPosition='center';el.style.backgroundRepeat='no-repeat';el.classList.add('rebirth-dragon');el.dataset.hatching=String(rank<=10);
  el.classList.toggle('advanced-dragon',look.grade>0);el.dataset.visualRank=rank;el.dataset.grade=look.grade;
- let gear=el.querySelector('.rank-equipment');if(!look.grade){gear?.remove();return;}
- if(!gear){gear=document.createElement('span');gear.className='rank-equipment';gear.setAttribute('aria-hidden','true');el.append(gear);}
- gear.innerHTML=equipmentMarkup(look.grade);
+ el.querySelector('.rank-equipment')?.remove();
 }
 
 function render(){document.body.classList.toggle('preschool-active',!$('#game').hidden&&isPreschool());renderChallengeProgress();const rank=rankFor(state.score);$('#listen').hidden=isMath();$('#voice-note').hidden=isMath();$$('[data-score]').forEach(el=>el.textContent=state.score);$$('[data-rank]').forEach(el=>el.textContent=rank);$$('[data-progress]').forEach(el=>el.style.width=`${rank===MAX_RANK?100:(state.score%POINTS_PER_RANK)/POINTS_PER_RANK*100}%`);$$('.dragon').forEach(el=>setDragon(el,rank));$('.rank-label').innerHTML=`${rankNames()[rank-1]} · <span data-rank>${rank}</span>/100`;$('#streak').textContent=`Série · ${streak}`;$('#difficulty').textContent=`${profile().label} · ${isPreschool()?preschoolChoices(activityDifficulty())+' choix':isMath()?(activeActivity==='multiply'?(selectedTable?'Table de '+selectedTable:'Tables'):current?.mode==='line'?'Jauge':MATH_LEVELS[activityDifficulty()].choices+' choix'):isReading()?(activeActivity==='traps'?'2 choix':activeActivity==='link-words'?'3 mots':activeActivity==='build-word'?({easy:4,medium:6,hard:8})[activityDifficulty()]+' choix':readingChoices(activityDifficulty())+' choix'):activeActivity==='counting'?profile().numbers+' choix':activeActivity==='numbers'?profile().numbers+' choix':profile().letters+' lettres'}`;document.body.classList.toggle('reduce-motion',!state.motion);document.body.dataset.profile=state.dragonId;$$('.dragon').forEach(el=>el.setAttribute('aria-label',dragonMeta().companion));setDragon($('.profile-avatar'),rank);$('#profile-toggle').setAttribute('aria-label','Changer d’enfant, '+childLabel());$('#greet').setAttribute('aria-label','Voir '+(state.dragonId==='dragonne'?'la dragonne':'le dragon')+' en grand');$('#evolution-title').textContent=dragonMeta().companion+' grandit !';renderProfileChoices();renderActivities();}
@@ -95,7 +93,7 @@ function showEvolution(preview){
   const dialog=$('#evolution');dialog.dataset.preview=String(preview);$('#evolution-rank').textContent=`${rankNames()[rankFor(state.score)-1]} · Palier ${rankFor(state.score)}`;dialog.showModal();
   const dragon=dialog.querySelector('.dragon');dragon.style.animation='none';void dragon.offsetWidth;dragon.style.animation='';chime(true);
   const gate=createEvolutionGate({minDuration:state.motion?3400:1400,onComplete:()=>{if(evolutionGate===gate&&dialog.open)closeEvolution();}});evolutionGate=gate;
-  say(dragonMeta().companion+' grandit ! Quelle belle aventure !',()=>{if(evolutionGate!==gate||!dialog.open)return;evolutionTimer=setTimeout(()=>gate.speechFinished(),350);});
+  say('Une nouvelle évolution ! '+rankNames()[rankFor(state.score)-1]+'. Bravo !',()=>{if(evolutionGate!==gate||!dialog.open)return;evolutionTimer=setTimeout(()=>gate.speechFinished(),350);});
 }
 function closeEvolution(){
   clearTimeout(evolutionTimer);evolutionGate?.stop();evolutionGate=null;const dialog=$('#evolution');if(!dialog.open)return;
@@ -232,7 +230,7 @@ function beginProfileEditor(id=null){
  $('#dragon-options').replaceChildren(...DRAGON_IDS.map(dragonId=>{
   const label=document.createElement('label');label.className='dragon-option';label.dataset.dragon=dragonId;
   const input=document.createElement('input');input.type='radio';input.name='dragon-choice';input.value=dragonId;input.required=true;input.checked=dragonId===(child?.dragonId||'dragonne');
-  const art=document.createElement('span');art.className='dragon-option-image';art.setAttribute('aria-hidden','true');setDragon(art,child?rankFor(child.score):1,dragonId);
+  const art=document.createElement('span');art.className='dragon-option-image';art.setAttribute('aria-hidden','true');setDragon(art,20,dragonId);
   const name=document.createElement('strong');name.textContent=DRAGONS[dragonId].label;label.append(input,art,name);return label;
  }));
  if(!$('#profiles').open)$('#profiles').showModal();$('#child-firstname').focus();
