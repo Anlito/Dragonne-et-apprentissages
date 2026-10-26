@@ -1,0 +1,15 @@
+<!doctype html>
+<html lang="fr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Les 36 décors · Dragons & découvertes</title><link rel="stylesheet" href="style.css"><style>
+body{padding:24px}main{max-width:1200px;margin:auto}.scene-gallery-title{text-align:center;margin:25px 0 35px}.scene-gallery-title h1{font-size:32px;letter-spacing:-1px}.scene-gallery-title p{font-size:17px}.scene-gallery-title a{color:#84659b}.scene-gallery{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:24px}.scene-gallery article{min-width:0}.scene-gallery h2{font-size:18px;margin:0 0 9px}.scene-gallery h2 small{font-size:12px;font-weight:400;display:block;margin-top:3px}.scene-gallery .garden-scene{aspect-ratio:600/340}.scene-gallery .scene-hit{min-width:0;min-height:0;border:0;pointer-events:none}.scene-gallery .garden-scene:after{display:none}@media(max-width:800px){.scene-gallery{grid-template-columns:repeat(2,minmax(0,1fr));gap:20px}}@media(max-width:480px){body{padding:18px}.scene-gallery{grid-template-columns:1fr}}
+</style></head><body><main><header class="scene-gallery-title"><a href="./">← Retour aux jeux</a><h1>36 décors à découvrir</h1><p>9 univers pour le jeu des différences et « Observe bien ! »</p></header><div class="scene-gallery" id="catalog"></div></main><script type="module">
+import {SCENE_CATALOG,SCENE_WORLDS,sceneBackdrop} from './scene-catalog.mjs';
+import {gardenScene,SCENE_SLOTS,sceneObjectMarkup} from './scene-games.mjs';
+SCENE_CATALOG.forEach((theme,index)=>{
+ let seed=100+index;const random=()=>((seed=(Math.imul(seed,1664525)+1013904223)>>>0)/2**32);
+ const scene=gardenScene('hard',random,theme.id),card=document.createElement('article'),title=document.createElement('h2'),garden=document.createElement('div');
+ title.textContent=(index+1)+'. '+theme.name;const subtitle=document.createElement('small');subtitle.textContent=SCENE_WORLDS[theme.world].label;title.append(subtitle);
+ garden.className='garden-scene';garden.setAttribute('role','img');garden.setAttribute('aria-label',theme.name);garden.innerHTML=sceneBackdrop(theme.id);
+ for(const slot of SCENE_SLOTS){const item=document.createElement('span');item.className='scene-hit';item.style.left=(slot.x/6)+'%';item.style.top=(slot.y/3.4)+'%';item.style.width=(slot.w/6)+'%';item.style.height=(slot.h/3.4)+'%';item.setAttribute('aria-hidden','true');item.innerHTML=sceneObjectMarkup(slot.id,scene[slot.id],scene);garden.append(item);}
+ card.append(title,garden);document.querySelector('#catalog').append(card);
+});
+</script></body></html>

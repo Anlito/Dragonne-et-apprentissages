@@ -198,3 +198,4 @@ body.scene-active #choices.scene-choices{display:grid;grid-template-columns:repe
 
 /* Keep each atlas cell square even when short screens limit card height. */
 body.preschool-active #game[data-reading=animal-sounds] .preschool-choice{container-type:size}.sound-animal{width:min(100cqw,100cqh);height:min(100cqw,100cqh)}
+.scene-backdrop{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;z-index:0}.scene-sign-shape{position:absolute;left:27%;top:9%;width:46%;height:42%}.scene-counted{align-items:center}.scene-counted>span{height:85%}.scene-hit>svg{filter:drop-shadow(1px 3px 1px #79644940)}

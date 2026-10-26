@@ -1,3 +1,4 @@
+import {SCENE_CATALOG,SCENE_WORLDS,sceneTheme,themedSlotMarkup} from './scene-catalog.mjs';
 import {shadowMarkup,shapeMarkup} from './preschool.mjs';
 export const SCENE_IDS=['differences','observation'];
 export const SCENE_LEVELS={easy:{differences:2,choices:2,details:6},medium:{differences:3,choices:3,details:8},hard:{differences:5,choices:4,details:10}};
@@ -17,28 +18,31 @@ export const SCENE_SLOTS=[
 ];
 const shuffle=(values,random)=>{const a=[...values];for(let i=a.length-1;i>0;i--){const j=Math.floor(random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}return a;};
 const integer=(max,random)=>Math.floor(random()*max);
-export function gardenScene(level='easy',random=Math.random){const settings=SCENE_LEVELS[level]||SCENE_LEVELS.easy;return {sun:integer(2,random),house:integer(4,random),tree:integer(2,random),animal:integer(6,random),flowers:1+integer(4,random),ball:integer(4,random),cloud:integer(2,random),kite:integer(4,random),bird:integer(2,random),mushroom:integer(2,random),details:settings.details,land:integer(3,random)};}
+export function gardenScene(level='easy',random=Math.random,theme=null){const settings=SCENE_LEVELS[level]||SCENE_LEVELS.easy;return {theme:theme||SCENE_CATALOG[integer(SCENE_CATALOG.length,random)].id,sun:integer(2,random),house:integer(4,random),tree:integer(2,random),animal:integer(6,random),flowers:1+integer(4,random),ball:integer(4,random),cloud:integer(2,random),kite:integer(4,random),bird:integer(2,random),mushroom:integer(2,random),details:settings.details,land:integer(3,random)};}
 const DOMAIN={sun:2,house:4,tree:2,animal:6,flowers:4,ball:4,cloud:2,kite:4,bird:2,mushroom:2};
-export function differenceQuestion(level='easy',previous=null,random=Math.random){
+export function differenceQuestion(level='easy',previous=null,random=Math.random,theme=null){
  const settings=SCENE_LEVELS[level]||SCENE_LEVELS.easy;let original,changed,targets,id;
  for(let attempt=0;attempt<12;attempt++){
-  original=gardenScene(level,random);changed={...original};targets=shuffle(SCENE_SLOTS.slice(0,settings.details).map(s=>s.id),random).slice(0,settings.differences);
+  original=gardenScene(level,random,theme);changed={...original};targets=shuffle(SCENE_SLOTS.slice(0,settings.details).map(s=>s.id),random).slice(0,settings.differences);
   for(const key of targets){const offset=1+integer(DOMAIN[key]-1,random);changed[key]=key==='flowers'?1+(original[key]-1+offset)%DOMAIN[key]:(original[key]+offset)%DOMAIN[key];}
   id=JSON.stringify([original,changed]);if(id!==previous)break;
  }
  return {kind:'differences',id,original,changed,targets,found:[],prompt:'Compare les deux images. Touche les éléments qui sont différents.',choices:[]};
 }
 export function findDifference(question,id){if(question.found.includes(id))return 'ignored';if(!question.targets.includes(id))return 'wrong';question.found.push(id);return question.found.length===question.targets.length?'complete':'found';}
-export function observationQuestion(level='easy',previous=null,random=Math.random){
+export function observationQuestion(level='easy',previous=null,random=Math.random,theme=null){
  const settings=SCENE_LEVELS[level]||SCENE_LEVELS.easy;let scene,type,id;
- for(let attempt=0;attempt<12;attempt++){scene=gardenScene(level,random);type=['animal','house','flowers','ball',...(level==='easy'?[]:['kite'])][integer(level==='easy'?4:5,random)];id=JSON.stringify([scene,type]);if(id!==previous)break;}
+ for(let attempt=0;attempt<12;attempt++){scene=gardenScene(level,random,theme);type=['animal','house','flowers','ball',...(level==='easy'?[]:['kite'])][integer(level==='easy'?4:5,random)];id=JSON.stringify([scene,type]);if(id!==previous)break;}
  const target=scene[type],domain=type==='animal'?[0,1,2,3,4,5]:type==='flowers'?[1,2,3,4]:[0,1,2,3];
  const choices=shuffle([target,...shuffle(domain.filter(v=>v!==target),random).slice(0,settings.choices-1)],random);
- const prompt={animal:'Quel animal as-tu vu dans le jardin ?',house:'De quelle couleur était le toit de la maison ?',flowers:'Combien de fleurs as-tu vues ?',ball:'De quelle couleur était le ballon ?',kite:'Quelle était la forme du cerf-volant ?'}[type];
+ const setting=sceneTheme(scene.theme),world=SCENE_WORLDS[setting.world];
+ const counted=(/^[aàâeéèêiîoôuû]/i.test(world.countName)?'d’':'de ')+world.countName;
+ const prompt={animal:'Qu’y avait-il au milieu de l’image, en bas ?',house:'Quelle couleur '+(setting.heroName.startsWith('les ')?'avaient ':'avait ')+setting.heroName+' ?',flowers:'Combien '+counted+' y avait-il en bas à droite ?',ball:'Quelle couleur avait '+world.propName+', en bas à gauche ?',kite:'Quelle forme était sur le panneau ?'}[type];
  return {kind:'observation',id,scene,type,target,choices,prompt,phase:'ready'};
 }
 const svg=content=>'<svg viewBox="0 0 100 100" aria-hidden="true">'+content+'</svg>';
-export function sceneObjectMarkup(id,value){
+export function sceneObjectMarkup(id,value,scene=null){
+ if(scene?.theme){const themed=themedSlotMarkup(id,value,scene.theme,SCENE_COLORS);if(themed!==null)return themed;}
  if(id==='animal')return '<span class="garden-animal" style="background-position:'+(value%3*50)+'% '+(Math.floor(value/3)*100)+'%" aria-hidden="true"></span>';
  if(id==='house')return svg('<path d="M20 43H80V92H20Z" fill="#e3cd96"/><path d="M7 46 50 9 93 46Z" fill="'+SCENE_COLORS[value].fill+'"/><path d="M32 59H45V73H32ZM59 65H73V92H59Z" fill="#a5b7c3"/><path d="M30 57H47V75H30ZM57 63H75V92H57Z" fill="none" stroke="#8b755e" stroke-width="2"/>');
  if(id==='tree')return value===0?shadowMarkup('tree'):svg('<path d="M45 46H56V95H45Z" fill="#a37c56"/><circle cx="32" cy="36" r="23" fill="#8eaa72"/><circle cx="67" cy="35" r="25" fill="#a4bb84"/><circle cx="49" cy="19" r="24" fill="#b1c48c"/>');
@@ -51,8 +55,13 @@ export function sceneObjectMarkup(id,value){
  if(id==='mushroom')return svg('<path d="M39 41H61L68 93H32Z" fill="#ecd7b3"/><path d="M5 48Q50-20 95 48Z" fill="'+(value?'#b49ac2':'#cc786e')+'"/><circle cx="30" cy="31" r="7" fill="#fff1d3"/><circle cx="62" cy="27" r="7" fill="#fff1d3"/>');
  return '';
 }
-export function observationChoiceMarkup(question,value){return question.type==='kite'?shapeMarkup(['diamond','triangle','circle','square'][value],'#b6a1c9'):question.type==='house'||question.type==='ball'?svg('<circle cx="50" cy="50" r="36" fill="'+SCENE_COLORS[value].fill+'"/>'):sceneObjectMarkup(question.type,value);}
-export function observationChoiceLabel(question,value){return question.type==='animal'?SCENE_ANIMALS[value]:question.type==='flowers'?value+' fleurs':question.type==='kite'?['Un losange','Un triangle','Un rond','Un carré'][value]:SCENE_COLORS[value].name;}
+export function observationChoiceMarkup(question,value){return question.type==='kite'?shapeMarkup(['diamond','triangle','circle','square'][value],'#b6a1c9'):question.type==='house'||question.type==='ball'?svg('<circle cx="50" cy="50" r="36" fill="'+SCENE_COLORS[value].fill+'"/>'):sceneObjectMarkup(question.type,value,question.scene);}
+export function observationChoiceLabel(question,value){
+ const world=SCENE_WORLDS[sceneTheme(question.scene?.theme).world];
+ return question.type==='animal'?OBJECT_LABELS[world.subjects[value]]:question.type==='flowers'?value+' '+world.countName:question.type==='kite'?['Un losange','Un triangle','Un rond','Un carré'][value]:SCENE_COLORS[value].name;
+}
+const OBJECT_LABELS={apple:'Une pomme',flower:'Une fleur',boat:'Un bateau',fish:'Un poisson',butterfly:'Un papillon',rocket:'Une fusée',car:'Une voiture',cup:'Une tasse',carrot:'Une carotte',basket:'Un panier',watering:'Un arrosoir',pumpkin:'Une citrouille',shovel:'Une pelle',shell:'Un coquillage',bucket:'Un seau',star:'Une étoile',crab:'Un crabe',anchor:'Une ancre',leaf:'Une feuille',acorn:'Un gland',mushroom:'Un champignon',lantern:'Une lanterne',boot:'Une chaussure de randonnée',snowflake:'Un flocon',sled:'Une luge',backpack:'Un sac à dos',train:'Un train',bread:'Du pain',book:'Un livre',cone:'Un plot',balloon:'Un ballon',flag:'Un drapeau',shield:'Un bouclier',crown:'Une couronne',key:'Une clé',gem:'Une pierre précieuse',planet:'Une planète',robot:'Un robot',astronaut:'Un astronaute',ufo:'Une soucoupe volante',satellite:'Un satellite',penguin:'Un manchot',iceberg:'Un iceberg',hat:'Un bonnet',mitten:'Une moufle',seal:'Une otarie',turtle:'Une tortue',octopus:'Une pieuvre',jellyfish:'Une méduse',chest:'Un coffre'};
+
 export function createObservationTimer({now=()=>performance.now(),schedule=setTimeout,cancel=clearTimeout,onTick=()=>{},onEnd=()=>{}}={}){
  let handle=null,active=false,deadline=0;
  function stop(){active=false;if(handle!==null)cancel(handle);handle=null;}

@@ -1,3 +1,4 @@
+import {SCENE_CATALOG,chooseSceneTheme,sceneBackdrop} from './scene-catalog.mjs';
 import {dragonAppearance} from './dragon-evolutions.mjs';
 import {CHALLENGE_IDS,challengePlan,uniqueChallengeQuestion} from './challenge.mjs';
 import {DEFAULT_FLUENCY_TEXT,fluencyTokens,fluencyWordCount,fluencyRecord,recordFluencyAttempt,normalizeFluencyText,createFluencyClock} from './fluency.mjs';
@@ -27,7 +28,8 @@ const lastNumberWordsByChild=Object.create(null);
 let mixedChallenge=null;
 let childToDelete=null;
 const generateQuestion=factory=>mixedChallenge?uniqueChallengeQuestion(factory,mixedChallenge.seen,activeActivity):factory();
-let sceneClock=null,sceneEpoch=0,sceneImagePromise=null;
+let sceneClock=null,sceneEpoch=0;
+const sceneHistory={differences:[],observation:[]};
 const isScene=()=>SCENE_IDS.includes(activeActivity);
 const isPreschool=()=>PRESCHOOL_IDS.includes(activeActivity);
 let animalCall=null,animalHistory=[],shadowDrag=null,selectedShadow=null;
@@ -662,7 +664,9 @@ function startScene(kind){
 }
 function nextScene(){
  if($('#game').hidden||!isScene())return;stopScene();clearQuestionTransition();
- current=generateQuestion(()=>activeActivity==='differences'?differenceQuestion(activityDifficulty(),current?.id):observationQuestion(activityDifficulty(),current?.id));locked=false;mistakes=0;
+ const history=sceneHistory[activeActivity];if(history.length>=SCENE_CATALOG.length)history.splice(0,history.length-1);
+ const theme=chooseSceneTheme(history);
+ current=generateQuestion(()=>activeActivity==='differences'?differenceQuestion(activityDifficulty(),current?.id,Math.random,theme):observationQuestion(activityDifficulty(),current?.id,Math.random,theme));history.push(theme);locked=false;mistakes=0;
  $('#reading-board').replaceChildren();$('#choices').replaceChildren();$('#choices').hidden=true;
  $('.question h1').textContent=activeActivity==='differences'?'Trouve les différences':'Regarde et souviens-toi';
  $('#game').classList.remove('question-enter');void $('#game').offsetWidth;$('#game').classList.add('question-enter');
@@ -674,9 +678,10 @@ function nextScene(){
 }
 function gardenElement(scene,interactive=false,number=0){
  const garden=document.createElement('div');garden.className='garden-scene garden-land-'+scene.land;garden.setAttribute('role',interactive?'group':'img');garden.setAttribute('aria-label',interactive?'Image '+number+' à comparer':'La scène à observer');
+ garden.dataset.sceneTheme=scene.theme;garden.innerHTML=sceneBackdrop(scene.theme);
  if(number){const badge=document.createElement('span');badge.className='garden-number';badge.textContent=number;badge.setAttribute('aria-hidden','true');garden.append(badge);}
  SCENE_SLOTS.slice(0,scene.details).forEach((slot,index)=>{
-  const item=document.createElement(interactive?'button':'span');item.className='scene-hit';item.style.left=(slot.x/6)+'%';item.style.top=(slot.y/3.4)+'%';item.style.width=(slot.w/6)+'%';item.style.height=(slot.h/3.4)+'%';item.innerHTML=sceneObjectMarkup(slot.id,scene[slot.id]);
+  const item=document.createElement(interactive?'button':'span');item.className='scene-hit';item.style.left=(slot.x/6)+'%';item.style.top=(slot.y/3.4)+'%';item.style.width=(slot.w/6)+'%';item.style.height=(slot.h/3.4)+'%';item.innerHTML=sceneObjectMarkup(slot.id,scene[slot.id],scene);
   if(interactive){item.type='button';item.dataset.sceneSlot=slot.id;item.setAttribute('aria-label','Détail '+(index+1)+' de l’image '+number);item.onclick=()=>chooseDifference(slot.id);}else item.setAttribute('aria-hidden','true');garden.append(item);
  });
  if(interactive)garden.onclick=event=>{if(!event.target.closest('.scene-hit'))chooseDifference('background');};return garden;
@@ -697,13 +702,9 @@ function renderObservationReady(){
  const start=document.createElement('button');start.type='button';start.className='observation-start';start.setAttribute('aria-label','Observer l’image pendant cinq secondes');start.innerHTML='<svg viewBox="0 0 100 70" aria-hidden="true"><path d="M5 35Q50-15 95 35Q50 85 5 35Z"/><circle cx="50" cy="35" r="16"/></svg><span aria-hidden="true">▶</span><span>Observer</span>';
  start.onclick=startObservation;board.append(start);$('.question h1').textContent='Regarde et souviens-toi';
 }
-function loadGardenAnimals(){
- if(!sceneImagePromise)sceneImagePromise=new Promise((resolve,reject)=>{const preload=new Image();preload.onload=resolve;preload.onerror=()=>{sceneImagePromise=null;reject(new Error('Image indisponible'));};preload.src='assets/animaux-jardin.png';});return sceneImagePromise;
-}
-async function startObservation(){
+function startObservation(){
  if(locked||!current||current.kind!=='observation'||current.phase!=='ready')return;
  stopScene();const generation=sceneEpoch,question=current;question.phase='loading';$('#reading-board button').disabled=true;$('#feedback').textContent='La scène se prépare…';render();
- try{await loadGardenAnimals();}catch{if(sceneEpoch!==generation||current!==question)return;question.phase='ready';renderObservationReady();$('#feedback').textContent='L’image n’a pas chargé. Appuie pour réessayer.';render();return;}
  if(sceneEpoch!==generation||current!==question||$('#game').hidden||$('#parent').open||document.hidden)return;
  if('speechSynthesis'in window)speechSynthesis.cancel();question.phase='observing';const board=$('#reading-board');board.replaceChildren(gardenElement(question.scene));
  const timer=document.createElement('div');timer.className='observation-timer';timer.setAttribute('aria-label','Cinq secondes pour observer');timer.innerHTML='<span class="observation-seconds">5</span><span class="observation-bar"><i></i></span>';board.append(timer);$('#feedback').textContent='Observe bien tous les détails.';render();

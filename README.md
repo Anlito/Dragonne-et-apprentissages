@@ -4,6 +4,22 @@ Première version de la PWA Android « Dragonne-et-apprentissages », pensée po
 
 ## Fonctionnement
 
+### 26 octobre 2026 — 36 compositions pour les deux jeux d’observation (v36)
+
+Le jeu des différences et « Observe bien ! » disposent de 36 compositions identifiables dans neuf univers : campagne, mer, forêt, montagne, ville, château, espace, banquise et fonds marins. Chaque univers contient quatre scènes avec un bâtiment ou un élément principal propre : ferme, moulin, serre, verger ; phare, cabane de plage, voilier, château de sable ; cabane dans les arbres, camping, pont, maison champignon ; chalet, téléphérique, train, cascade ; boulangerie, caserne, école, parc de jeux ; château fort, tour, pont-levis, tournoi ; fusée, station, véhicule lunaire, observatoire ; igloo, bateau des glaces, colonie de manchots, palais de glace ; récif, épave, sous-marin, coffre englouti.
+
+Les paysages, objets à retrouver, éléments à compter et accessoires changent selon l’univers. Les dessins vectoriels prolongent la palette et les formes du papier découpé existant. Chaque partie modifie les couleurs, formes, quantités et objets dans ces compositions. Les deux images d’une comparaison partagent exactement le même décor ; seules les 2/3/5 différences annoncées changent réellement.
+
+Les questions d’observation désignent les nouveaux éléments : couleur du phare ou du sous-marin, coquillages ou étoiles de mer à compter, objet central à mémoriser, forme du panneau. Les questions précisent la position lorsque plusieurs objets de même type peuvent apparaître dans la scène. Le délai de cinq secondes, les 2/3/4 réponses, les points, sauvegardes et réglages par enfant sont conservés. Les scènes étant dessinées directement dans la page, le chronomètre n’attend plus une ancienne planche d’animaux inutile à ces nouveaux décors.
+
+Un historique distinct par activité évite de revoir une composition avant d’avoir parcouru les 36 pendant la session. Revenir à l’accueil ne réinitialise pas cet historique ; recharger l’application le réinitialise. La page scenes.html présente les 36 compositions sans modifier les points ni les profils.
+
+Sources : scene-catalog.mjs contient les neuf univers, les 36 éléments principaux, les objets et paysages ; scene-games.mjs compose les exercices et leurs questions ; app.js gère le tirage sans répétition et la présentation ; scenes.html est la galerie ; style.css contient les styles partagés. Les objets et les réponses utilisent les mêmes dessins, afin d’éviter une différence accidentelle entre une illustration et sa copie. Cache dragonne-v36, sans nouveaux fichiers audio ni grosses images à télécharger.
+
+Vérifications : node check-scene-catalog.mjs couvre 36 compositions distinctes, neuf univers, les quatre couleurs de chaque élément principal, 4 320 paires dont les différences rendues correspondent exactement aux cibles, les questions et réponses adaptées, et le parcours des 36 décors avant répétition. Régressions : scènes/chronomètre, récompenses, défi et profils. Contrôle des 36 scènes dans la galerie du navigateur, comparaison dans trois décors successifs sans répétition, mise en page téléphone 360×640 et 740×360, observation puis disparition de la scène et question contextuelle. Aucun point de profil n’a été modifié pendant ces essais.
+
+Limites : les 36 compositions partagent neuf familles de paysages et une disposition lisible des détails ; elles ne sont pas 36 photographies. Les questions restent visuelles avec synthèse vocale française selon les voix installées sur l’appareil. L’historique des décors est propre à la session, pas une donnée sauvegardée du profil.
+
 ### 26 octobre 2026 — Deux jeux d’observation et 30 cris d’animaux (v35)
 
 **Le jeu des différences** affiche deux jardins à comparer. L’enfant touche les détails qui changent dans l’une ou l’autre image ; chaque différence trouvée est entourée dans les deux scènes. Facile demande 2 différences sur 6 détails, Moyen 3 sur 8, Difficile 5 sur 10. Les variations concernent les contours, couleurs, quantités ou animaux. Les scènes sont générées à chaque tour, avec des centaines de combinaisons. Une différence déjà trouvée ne rapporte rien de plus ; les points ne sont attribués qu’une fois la scène entièrement résolue. Une erreur compte dans le barème commun 10/5/1.
