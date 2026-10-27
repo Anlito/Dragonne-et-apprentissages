@@ -1,7 +1,8 @@
+import {setupPlaytime} from './playtime-ui.mjs';
 import {variedQuestion} from './variation.mjs';
 import {objectIcon} from './scene-catalog.mjs';
 import {setupParentPage,enhanceActivityCards,refreshParentPreview} from './parent-page.mjs';
-import {PAINTS,paintMarkup,colorTileMarkup} from './colors.mjs';
+import {PAINTS,paintMarkup} from './colors.mjs';
 import {SCENE_CATALOG,chooseSceneTheme,sceneBackdrop} from './scene-catalog.mjs';
 import {dragonAppearance} from './dragon-evolutions.mjs';
 import {CHALLENGE_IDS,challengePlan,uniqueChallengeQuestion} from './challenge.mjs';
@@ -19,6 +20,8 @@ import {ANIMALS,createMemory,flipMemory,settleMemory,memoryLayout} from './memor
 import {award,rankFor,question,numberQuestion,DIFFICULTIES,difficultyFor,RANK_THRESHOLDS,MAX_RANK,POINTS_PER_RANK,parsePoints} from './engine.mjs';
 const PAGE_PARAMS=new URLSearchParams(location.search),IS_PREVIEW=PAGE_PARAMS.has('preview'),IS_PARENT_PAGE=document.body.hasAttribute('data-parent-page');
 let previewAudioArmed=false;
+let playTimer=null;
+const canStartTimedPlay=()=>playTimer?.canPlay()!==false;
 const $=s=>document.querySelector(s), $$=s=>document.querySelectorAll(s);
 function readSaved(key){try{return JSON.parse(localStorage.getItem(key));}catch{return null;}}
 const accounts=loadProfiles(readSaved(PROFILES_KEY)??readSaved(PREVIOUS_PROFILES_KEY),readSaved('dragonne-v1'));
@@ -119,7 +122,7 @@ function closeEvolution(){
   const preview=dialog.dataset.preview==='true';if('speechSynthesis'in window)speechSynthesis.cancel();dialog.close();if(!preview&&!activePage().hidden)afterCelebration();
 }
 $('#skip-evolution').onclick=closeEvolution;$('#evolution').addEventListener('cancel',e=>{e.preventDefault();closeEvolution();});
-function startListeningActivity(kind){
+function startListeningActivity(kind){if(!canStartTimedPlay())return;
   stopScene();stopAnimalCall();cancelShadowDrag();if(PRESCHOOL_IDS.includes(kind)){startPreschool(kind);return;}if(SCENE_IDS.includes(kind)){startScene(kind);return;}if(kind==='challenge'){startChallenge();return;}
   if(kind==='fluency'){startFluency();return;}
   if(MATH_IDS.includes(kind)){startMath(kind);return;}if(READING_IDS.includes(kind)){startReading(kind);return;}
@@ -136,7 +139,7 @@ $('#listen').onclick=()=>{previewAudioArmed=true;listen();};$('#greet').onclick=
 $$('[data-soon]').forEach(el=>el.onclick=()=>{toast('Cette activité arrive bientôt !');say(`${el.dataset.soon} arrive bientôt. Tu peux jouer aux lettres !`);});
 $('#settings').onclick=()=>{stopScene(true);stopAnimalCall();cancelShadowDrag();$('#reset-confirmation').hidden=true;$('#reset-progress').hidden=false;$('#reset-result').textContent='';const a=4+Math.floor(Math.random()*5),b=3+Math.floor(Math.random()*6);challengeAnswer=a+b;$('#challenge').textContent=`${a} + ${b}`;$('#parent-gate').hidden=false;$('#parent-options').hidden=true;$('#gate-answer').value='';$('#gate-error').textContent='';$('#parent').showModal();};
 $('#gate-form').onsubmit=e=>{e.preventDefault();if(Number($('#gate-answer').value)!==challengeAnswer){$('#gate-error').textContent='Réessaie.';return;}$('#parent-gate').hidden=true;$('#parent-options').hidden=false;renderParentSettings();};
-function renderParentSettings(){resetDeleteChild();renderChallengeSettings();renderFluencyParent();renderChildSelect();renderActivitySettings();$('#reset-confirmation').hidden=true;$('#reset-progress').hidden=false;$('#reset-result').textContent='';$('#parent-profile').value=activeId;$('#parent-profile-note').textContent='Réglages et progression de '+childLabel()+' uniquement.';$('#level').value=state.difficulty;$('#manual-points').value=state.score;$('#points-result').textContent='';previewPoints();renderDifficulty();renderRanks();$('#sound').checked=state.sound;$('#motion').checked=state.motion;if(IS_PARENT_PAGE)setupParentPage({activities:ACTIVITIES,profile:()=>state,childId:()=>activeId});}
+function renderParentSettings(){resetDeleteChild();renderChallengeSettings();renderFluencyParent();renderChildSelect();renderActivitySettings();$('#reset-confirmation').hidden=true;$('#reset-progress').hidden=false;$('#reset-result').textContent='';$('#parent-profile').value=activeId;$('#parent-profile-note').textContent='Réglages et progression de '+childLabel()+' uniquement.';$('#level').value=state.difficulty;$('#manual-points').value=state.score;$('#points-result').textContent='';previewPoints();renderDifficulty();renderRanks();$('#sound').checked=state.sound;$('#motion').checked=state.motion;if(IS_PARENT_PAGE){setupParentPage({activities:ACTIVITIES,profile:()=>state,childId:()=>activeId});playTimer?.parent();}}
 function renderRanks(){const rank=rankFor(state.score);$('#rank-summary').textContent=rank===MAX_RANK?`${state.score} étoiles · dernier palier atteint !`:`${state.score} étoiles · palier ${rank}/100 · encore ${RANK_THRESHOLDS[rank]-state.score} étoiles avant le suivant.`;$('#rank-rows').replaceChildren(...RANK_THRESHOLDS.map((points,i)=>{const row=document.createElement('tr');const level=document.createElement('th'),name=document.createElement('td'),threshold=document.createElement('td');level.textContent=String(i+1);name.textContent=rankNames()[i]+(rank===i+1?' · actuel':'');threshold.textContent=String(points);row.append(level,name,threshold);return row;}));}
 function renderDifficulty(){const p=DIFFICULTIES[state.difficulty];$('#difficulty-summary').textContent=`${p.letters} lettres proposées · ${p.numbers} réponses en nombres (${state.difficulty==='easy'?'doigts':state.difficulty==='medium'?'doigts et chiffres':'chiffres'}) · ${p.memoryPairs} paires (${p.memoryPairs*2} cartes) · lecture : ${readingChoices(state.difficulty)} choix · quantités de 1 à 9 avec ${p.numbers} propositions.`;}
 $('#level').onchange=e=>{if(mixedChallenge)returnHome();state.difficulty=e.target.value;save();render();renderDifficulty();renderActivitySettings();if(IS_PARENT_PAGE)refreshParentPreview();if(!activePage().hidden){clearTimeout(turnTimer);clearQuestionTransition();if(activeActivity==='memory')startMemory();else next();}};
@@ -148,7 +151,7 @@ document.addEventListener('visibilitychange',()=>{if(document.hidden){stopScene(
 if('serviceWorker'in navigator)navigator.serviceWorker.register('./sw.js').catch(()=>toast('Le mode hors connexion n’a pas pu être activé.'));
 render();
 
-function startMemory(){stopScene();stopAnimalCall();cancelShadowDrag();
+function startMemory(){if(!canStartTimedPlay())return;stopScene();stopAnimalCall();cancelShadowDrag();
   if(!state.activities.memory)return;
   clearTimeout(memoryTimer);clearTimeout(turnTimer);clearQuestionTransition();
   activeActivity='memory';document.body.classList.remove('numbers-active','counting-active','reading-active','math-active','fluency-active');document.body.classList.add('memory-active');$('#welcome').hidden=true;$('#game').hidden=true;$('#memory').hidden=false;$('#memory-finish').hidden=true;
@@ -283,7 +286,7 @@ function renderActivitySettings(){
  $('#activity-settings').replaceChildren(...ACTIVITIES.map(activity=>{
   const row=document.createElement('div');row.className='activity-setting';const label=document.createElement('label');label.className='activity-setting-top';
   const art=document.createElement('span');art.className=activity.sceneTile!==undefined?'tile scene-tile scene-tile-'+activity.sceneTile:activity.preschoolTile!==undefined?'tile preschool-tile preschool-tile-'+activity.preschoolTile:activity.specialTile!==undefined?'tile special-tile special-tile-'+activity.specialTile:activity.studyTile!==undefined?'tile study-tile study-tile-'+activity.studyTile:activity.mathTile!==undefined?'tile math-tile math-tile-'+activity.mathTile:activity.readingTile===undefined?'tile tile-'+activity.tile:'tile reading-tile reading-tile-'+activity.readingTile;art.setAttribute('aria-hidden','true');
-  if(activity.colorTile){art.className='tile color-tile';art.innerHTML=colorTileMarkup();}
+  if(activity.colorTile){art.className='tile color-tile';}
   const text=document.createElement('span');text.textContent=activity.label;
   const input=document.createElement('input');input.type='checkbox';input.checked=state.activities[activity.id];input.setAttribute('aria-label','Afficher '+activity.label);
   input.onchange=()=>{if(mixedChallenge)returnHome();state.activities[activity.id]=input.checked;save();if(!input.checked&&activeActivity===activity.id&&!activePage().hidden)returnHome();else renderActivities();$('#activity-settings-status').textContent=(input.checked?'Activité affichée':'Activité masquée')+' pour '+childLabel()+'.';};
@@ -299,7 +302,7 @@ function renderActivitySettings(){
 
 // Activités de lecture : même progression, mêmes transitions que les jeux existants.
 for(const id of READING_IDS)$('#'+id+'-start').onclick=()=>startReading(id);
-function startReading(kind){stopScene();stopAnimalCall();cancelShadowDrag();
+function startReading(kind){if(!canStartTimedPlay())return;stopScene();stopAnimalCall();cancelShadowDrag();
  if(!state.activities[kind])return;
  clearTimeout(turnTimer);clearTimeout(memoryTimer);clearQuestionTransition();
  stopFluency();$('#fluence').hidden=true;document.body.classList.remove('memory-active','numbers-active','counting-active','math-active','fluency-active');document.body.classList.add('reading-active');
@@ -402,7 +405,7 @@ window.addEventListener('resize',drawWordLinks);
 
 // Mathématiques : résultat, terme manquant ou position sur une droite graduée.
 for(const kind of MATH_IDS)$('#'+kind+'-start').onclick=()=>startMath(kind);
-function startMath(kind){stopScene();stopAnimalCall();cancelShadowDrag();
+function startMath(kind){if(!canStartTimedPlay())return;stopScene();stopAnimalCall();cancelShadowDrag();
  if('speechSynthesis'in window)speechSynthesis.cancel();
  if(!state.activities[kind])return;
  clearTimeout(turnTimer);clearTimeout(memoryTimer);clearQuestionTransition();
@@ -463,7 +466,7 @@ function chooseMath(value,button){
 // Fluence : minute réelle, sélection explicite du dernier mot, record par texte/enfant.
 $('#fluency-start').onclick=startFluency;
 function stopFluency(){fluencyClock?.stop();fluencyClock=null;fluencyAttempt=null;}
-function startFluency(){stopScene();stopAnimalCall();cancelShadowDrag();
+function startFluency(){if(!canStartTimedPlay())return;stopScene();stopAnimalCall();cancelShadowDrag();
  if(!state.activities.fluency)return;
  clearTimeout(turnTimer);clearTimeout(memoryTimer);stopFluency();clearQuestionTransition();
  activeActivity='fluency';current=null;locked=false;streak=0;completed=0;mistakes=0;
@@ -522,7 +525,7 @@ $('#challenge-start').onclick=startChallenge;
 function renderChallengeProgress(){
  const badge=$('#challenge-progress');if(!badge)return;document.body.classList.toggle('challenge-running',!!mixedChallenge);badge.hidden=!mixedChallenge;if(mixedChallenge)badge.textContent='✦ Mon défi · '+Math.min(20,mixedChallenge.index+1)+' / 20';
 }
-function startChallenge(){
+function startChallenge(){if(!canStartTimedPlay())return;
  returnHome();if(!state.activities.challenge)return;
  const plan=challengePlan(state.challenge,state.activities);if(!plan.length){toast('Un parent peut choisir les activités du défi.');return;}
  mixedChallenge={plan,index:0,startScore:state.score,streak:0,seen:new Set()};launchChallengeRound();
@@ -567,7 +570,7 @@ $('#delete-child-confirm').onclick=()=>{
 for(const id of PRESCHOOL_IDS)$('#'+id+'-start').onclick=()=>startPreschool(id);
 function stopAnimalCall(){if(animalCall){animalCall.pause();animalCall.currentTime=0;animalCall=null;}$('#listen').classList.remove('animal-playing');}
 function cancelShadowDrag(){if(!shadowDrag)return;const drag=shadowDrag;shadowDrag=null;drag.ghost?.remove();drag.button?.classList.remove('dragging-shadow');if(drag.button?.hasPointerCapture?.(drag.pointerId))drag.button.releasePointerCapture(drag.pointerId);$('#shadow-target')?.classList.remove('drop-ready');}
-function startPreschool(kind){
+function startPreschool(kind){if(!canStartTimedPlay())return;
  animalHistory=[];
  if(!state.activities[kind])return;
  stopScene();stopAnimalCall();cancelShadowDrag();stopFluency();clearTimeout(turnTimer);clearTimeout(memoryTimer);clearQuestionTransition();
@@ -672,7 +675,7 @@ function renderSceneHeader(){
  if(!active)return;const settings=SCENE_LEVELS[activityDifficulty()];$('#difficulty').textContent=profile().label+' · '+(activeActivity==='differences'?settings.differences+' différences':'10 s · '+settings.choices+' choix');
  $('#listen').hidden=current?.phase==='observing'||current?.phase==='loading';$('#voice-note').hidden=$('#listen').hidden;
 }
-function startScene(kind){
+function startScene(kind){if(!canStartTimedPlay())return;
  if(!state.activities[kind])return;
  stopScene();stopAnimalCall();cancelShadowDrag();stopFluency();clearTimeout(turnTimer);clearTimeout(memoryTimer);clearQuestionTransition();if('speechSynthesis'in window)speechSynthesis.cancel();
  document.body.classList.remove('memory-active','numbers-active','counting-active','math-active','reading-active','fluency-active');
@@ -752,8 +755,9 @@ function listenScene(){
  $('#voice-note').textContent=state.sound?'Touche le haut-parleur pour réécouter.':'La voix est désactivée dans le coin parent.';
 }
 
-$$('.color-tile').forEach(el=>el.innerHTML=colorTileMarkup());
 
+
+playTimer=setupPlaytime({preview:IS_PREVIEW,storageKey:PROFILES_KEY,profile:()=>state,childId:()=>activeId,persist:save,pause:returnHome,disabled:IS_PREVIEW||IS_PARENT_PAGE});
 if(IS_PREVIEW){
  document.body.classList.add('game-preview');
  const child=PAGE_PARAMS.get('child');if(accounts.profiles[child]){activeId=child;state=structuredClone(accounts.profiles[child]);}

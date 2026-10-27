@@ -5,7 +5,7 @@ export const ACTIVITIES=[
   ...[['shapes','Les formes'],['animal-sounds','Les cris des animaux'],['shadows','Le puzzle des ombres']].map(([id,label],preschoolTile)=>({id,button:id+'-start',label,preschoolTile})),
   ...[['differences','Le jeu des différences'],['observation','Observe bien !']].map(([id,label],sceneTile)=>({id,button:id+'-start',label,sceneTile})),
   {id:'letters',button:'letters',label:'Les lettres',tile:0},
-  {id:'memory',button:'memory-start',label:'Les paires',tile:1},
+  {id:'memory',button:'memory-start',label:'Memory',tile:1},
   {id:'numbers',button:'numbers-start',label:'Les chiffres',tile:2},
   {id:'counting',button:'counting-start',label:'Je compte',tile:3},
   ...[

@@ -1,4 +1,5 @@
 import {extendedRankNames} from './dragon-evolutions.mjs';
+import {cleanPlaytime} from './playtime.mjs';
 import {cleanChallenge} from './challenge.mjs';
 import {cleanFluency} from './fluency.mjs';
 import {difficultyFor} from './engine.mjs';
@@ -15,7 +16,7 @@ export const DRAGON_IDS=Object.keys(DRAGONS);
 export function cleanName(value){return typeof value==='string'?value.replace(/[\u0000-\u001f\u007f]/g,'').trim().replace(/\s+/g,' ').slice(0,24):'';}
 export function cleanProfile(value){
  const score=Number.isFinite(value?.score)?Math.floor(value.score):0,name=cleanName(value?.name);
- return {name:name||'Enfant',dragonId:Object.hasOwn(DRAGONS,value?.dragonId)?value.dragonId:'dragonne',needsName:!name||value?.needsName===true,score:Number.isSafeInteger(score)&&score>=0?score:0,difficulty:difficultyFor(value),sound:value?.sound!==false,motion:value?.motion!==false,activities:cleanActivities(value?.activities),activityLevels:cleanActivityLevels(value?.activityLevels),challenge:cleanChallenge(value?.challenge),fluency:cleanFluency(value?.fluency)};
+ return {name:name||'Enfant',dragonId:Object.hasOwn(DRAGONS,value?.dragonId)?value.dragonId:'dragonne',needsName:!name||value?.needsName===true,score:Number.isSafeInteger(score)&&score>=0?score:0,difficulty:difficultyFor(value),sound:value?.sound!==false,motion:value?.motion!==false,activities:cleanActivities(value?.activities),activityLevels:cleanActivityLevels(value?.activityLevels),challenge:cleanChallenge(value?.challenge),fluency:cleanFluency(value?.fluency),playtime:cleanPlaytime(value?.playtime)};
 }
 const validId=id=>typeof id==='string'&&/^(child-[a-z0-9-]+|dragonne|dragon)$/i.test(id);
 export function loadProfiles(saved,legacy=null){

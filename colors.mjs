@@ -8,4 +8,3 @@ export function colorQuestion(level='easy',previous=null,random=Math.random){
  return {kind:'colors',id:mix.slice(0,2).join('+'),ingredients,target,choices:shuffle([target,...shuffle(distractors.filter(c=>c!==target),random).slice(0,count-1)],random),prompt:'Si tu mélanges du '+PAINTS[ingredients[0]][0]+' et du '+PAINTS[ingredients[1]][0]+', quelle couleur obtiens-tu ?'};
 }
 export function paintMarkup(id){const p=PAINTS[id];return '<svg viewBox="0 0 100 100" aria-hidden="true"><path d="M22 19Q43 1 63 15Q91 6 88 36Q107 58 84 72Q85 98 59 89Q29 105 20 82Q-2 77 10 52Q-3 25 22 19Z" fill="'+p[1]+'" stroke="#756454" stroke-opacity=".25" stroke-width="2"/><path d="M25 31Q30 21 43 23" fill="none" stroke="#fff9ed" stroke-opacity=".6" stroke-width="5" stroke-linecap="round"/></svg>';}
-export const colorTileMarkup=()=>'<span class="color-icon" aria-hidden="true">'+['red','yellow','blue'].map(p=>paintMarkup(p)).join('')+'</span>';

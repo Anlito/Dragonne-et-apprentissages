@@ -1,0 +1,6 @@
+{
+  "asset": "melange-couleurs-papier.png",
+  "tool": "Built-in image_gen",
+  "reference": "petits-jeux.png (style uniquement)",
+  "prompt": "Use case: illustration-story. Asset type: a single square activity tile illustration for a French preschool educational game, no UI. Reference image is STYLE ONLY: match its handmade layered cut-paper illustration on warm ivory fibrous paper, visible tactile paper fibers, softly irregular hand-cut edges and gentle real cast shadows. New subject: mixing paint colors, represented by two small open paint pots, one golden yellow and one muted blue, their paint streams meeting in one central green paint puddle, with a small wooden brush resting beside it. Simple easily understood composition for a four-year-old. All elements are made of textured colored paper, not glossy plastic. Balance the entire group horizontally and vertically in the square, generous equal margins 12 percent on each edge, no cropping. Soft sage green, cornflower blue, warm golden yellow, ivory and kraft wood brown, restrained saturation matching reference. Top-down nearly flat lay. No text, letters, numbers, frame, gradients, digital vector outlines, white shine streaks, extra symbols or interface. Output exactly one square illustration, not a sprite sheet."
+}
