@@ -8,8 +8,46 @@ export const SHAPES=[
  {id:'star',name:'l’étoile',path:'M50 8 62 35 92 38 70 59 76 90 50 75 24 90 30 59 8 38 38 35Z'},
  {id:'triangle',name:'le triangle',path:'M50 12 90 84H10Z'},
  {id:'oval',name:'l’ovale',path:'M50 25a40 25 0 1 0 0 50a40 25 0 1 0 0-50'},
- {id:'diamond',name:'le losange',path:'M50 7 81 50 50 93 19 50Z'}
+ {id:'diamond',name:'le losange',path:'M50 7 81 50 50 93 19 50Z'},
+ {id:'rectangle',name:'le rectangle',path:'M9 29H91V71H9Z'}
 ];
+export const SHAPE_COLORS=[
+ {id:'red',name:'rouge',feminine:'rouge',fill:'#d86860'},
+ {id:'blue',name:'bleu',feminine:'bleue',fill:'#5f9dc9'},
+ {id:'green',name:'vert',feminine:'verte',fill:'#83aa65'},
+ {id:'purple',name:'violet',feminine:'violette',fill:'#a581bd'}
+];
+export const shapeChoices=level=>({easy:3,medium:4,hard:6})[level]||3;
+const shapeParts=value=>{const [id,color='red',size='large']=value.split(':');return {shape:SHAPES.find(s=>s.id===id),color:SHAPE_COLORS.find(c=>c.id===color),size};};
+export function shapeLabel(value,level='hard'){
+ const {shape,color,size}=shapeParts(value),feminine=shape.id==='star';
+ if(level==='easy')return shape.name;
+ if(level==='medium')return shape.name+' '+(feminine?color.feminine:color.name);
+ const noun=shape.name.replace(/^(le |l’)/,'');
+ return (feminine?'la ':'le ')+(size==='small'?(feminine?'petite':'petit'):(feminine?'grande':'grand'))+' '+noun+' '+(feminine?color.feminine:color.name);
+}
+export function shapeQuestion(level='easy',previous=null,random=Math.random){
+ const pool=level==='easy'?SHAPES.slice(0,6):SHAPES;
+ const all=pool.flatMap(s=>SHAPE_COLORS.flatMap(c=>['small','large'].map(size=>s.id+':'+c.id+':'+size)));
+ const identity=id=>level==='easy'?id.split(':')[0]:level==='medium'?id.split(':').slice(0,2).join(':'):id;
+ const target=shuffled(all.filter(id=>!previous||identity(id)!==identity(previous)),random)[0];
+ const {shape,color,size}=shapeParts(target);
+ const choices=[target],add=id=>{if(!choices.includes(id))choices.push(id);};
+ const near={square:'rectangle',rectangle:'square',circle:'oval',oval:'circle',triangle:'diamond',diamond:'triangle',star:'triangle'};
+ if(level!=='easy'){
+  add(shape.id+':'+shuffled(SHAPE_COLORS.filter(c=>c.id!==color.id),random)[0].id+':'+size);
+  add(near[shape.id]+':'+color.id+':'+size);
+  if(level==='hard')add(shape.id+':'+color.id+':'+(size==='small'?'large':'small'));
+ }
+ for(const id of shuffled(all,random)){
+  if(choices.length>=shapeChoices(level))break;
+  const part=shapeParts(id);
+  if(level==='easy'&&choices.some(v=>shapeParts(v).shape.id===part.shape.id))continue;
+  if(level==='medium'&&choices.some(v=>{const p=shapeParts(v);return p.shape.id===part.shape.id&&p.color.id===part.color.id;}))continue;
+  add(id);
+ }
+ return {kind:'shapes',id:target,target,choices:shuffled(choices,random),prompt:'Trouve '+shapeLabel(target,level)+'.'};
+}
 export const SOUND_ANIMALS=[['cat','Le chat'],['dog','Le chien'],['cow','La vache'],['duck','Le canard'],['sheep','Le mouton'],['horse','Le cheval']].map(([id,name],tile)=>({id,name,tile,sprite:'assets/animaux-sons.png',audio:'assets/audio/'+id+(id==='duck'?'.mp3':'.ogg')}));
 SOUND_ANIMALS.push(...[
  {
@@ -857,6 +895,7 @@ const SIMILAR_ANIMALS=[['crow','raven','rook','blackbird'],['wolf','dog','coyote
 const sameSoundFamily=(a,b)=>SIMILAR_ANIMALS.some(group=>group.includes(a)&&group.includes(b));
 const shuffled=(values,random)=>{const out=[...values];for(let i=out.length-1;i>0;i--){const j=Math.floor(random()*(i+1));[out[i],out[j]]=[out[j],out[i]];}return out;};
 export function preschoolQuestion(kind,level='easy',previous=null,random=Math.random){
+ if(kind==='shapes')return shapeQuestion(level,previous,random);
  if(kind==='colors')return colorQuestion(level,previous,random);
  if(!PRESCHOOL_IDS.includes(kind))throw new Error('Unknown preschool activity');
  const pool=kind==='shapes'?SHAPES:kind==='animal-sounds'?SOUND_ANIMALS:SHADOW_OBJECTS;
@@ -868,8 +907,10 @@ export function preschoolQuestion(kind,level='easy',previous=null,random=Math.ra
  return {kind,id:target.id,target:target.id,choices,prompt:kind==='shapes'?'Trouve '+target.name+'.':PRESCHOOL_META[kind].instruction};
 }
 export function shapeMarkup(id,color='#a7b789'){
+ let scale=1;
+ if(id.includes(':')){const part=shapeParts(id);id=part.shape.id;color=part.color.fill;scale=part.size==='small'?.53:.95;}
  const shape=SHAPES.find(item=>item.id===id);if(!shape)return '';
- return '<svg viewBox="0 0 100 100" aria-hidden="true"><path d="'+shape.path+'" fill="'+color+'" stroke="#665447" stroke-opacity=".13" stroke-width="2" stroke-linejoin="round"/></svg>';
+ return '<svg viewBox="0 0 100 100" aria-hidden="true"><g transform="translate(50 50) scale('+scale+') translate(-50 -50)"><path d="'+shape.path+'" fill="'+color+'" stroke="#665447" stroke-opacity=".13" stroke-width="2" stroke-linejoin="round"/></g></svg>';
 }
 export function shadowMarkup(id,silhouette=false){
  const item=SHADOW_OBJECTS.find(item=>item.id===id);if(!item)return '';

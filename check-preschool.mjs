@@ -1,23 +1,34 @@
 import assert from 'node:assert/strict';
 import {readFileSync,existsSync} from 'node:fs';
-import {PRESCHOOL_IDS,SHAPES,SOUND_ANIMALS,SHADOW_OBJECTS,SHADOW_DISTRACTORS,preschoolQuestion,preschoolChoices,shapeMarkup,shadowMarkup,onShadowTarget} from './preschool.mjs';
+import {PRESCHOOL_IDS,SHAPES,SOUND_ANIMALS,SHADOW_OBJECTS,SHADOW_DISTRACTORS,preschoolQuestion,preschoolChoices,shapeMarkup,shapeChoices,shapeLabel,shadowMarkup,onShadowTarget} from './preschool.mjs';
 import {ACTIVITIES,cleanActivities} from './activities.mjs';
 import {cleanChallenge,challengePlan} from './challenge.mjs';
 import {cleanProfile} from './profiles.mjs';
 import vm from 'node:vm';
 import {award,rankFor} from './engine.mjs';
-assert.equal(SHAPES.length,6);assert.equal(SOUND_ANIMALS.length,100);assert.equal(SHADOW_OBJECTS.length,20);
+assert.equal(SHAPES.length,7);assert.equal(SOUND_ANIMALS.length,100);assert.equal(SHADOW_OBJECTS.length,20);
 let seed=123;const random=()=>((seed=(Math.imul(seed,1664525)+1013904223)>>>0)/2**32);
 for(const kind of PRESCHOOL_IDS){
  const seen=new Set();let previous=null;
  for(const level of ['easy','medium','hard'])for(let i=0;i<300;i++){
-  const q=preschoolQuestion(kind,level,previous,random);assert.notEqual(q.target,previous);assert(q.choices.includes(q.target));assert.equal(new Set(q.choices).size,q.choices.length);assert.equal(q.choices.length,preschoolChoices(level));seen.add(q.target);previous=q.id;
+  const q=preschoolQuestion(kind,level,previous,random);assert.notEqual(q.target,previous);assert(q.choices.includes(q.target));assert.equal(new Set(q.choices).size,q.choices.length);assert.equal(q.choices.length,kind==='shapes'?shapeChoices(level):preschoolChoices(level));seen.add(q.target);previous=q.id;
  }
- assert.equal(seen.size,kind==='shadows'?20:kind==='animal-sounds'?100:kind==='colors'?13:6);assert(cleanActivities({})[kind]);assert(ACTIVITIES.some(a=>a.id===kind));
+ if(kind==='shapes')assert(seen.size>=48);else assert.equal(seen.size,kind==='shadows'?20:kind==='animal-sounds'?100:kind==='colors'?13:6);assert(cleanActivities({})[kind]);assert(ACTIVITIES.some(a=>a.id===kind));
  const profile=cleanProfile({activityLevels:{[kind]:'easy'},activities:{[kind]:false}});assert.equal(profile.activityLevels[kind],'easy');assert.equal(profile.activities[kind],false);
  const plan=challengePlan(cleanChallenge({}),cleanActivities({}),random);assert.equal(plan.length,20);assert(plan.includes(kind));
 }
 for(const shape of SHAPES)assert(shapeMarkup(shape.id).includes(shape.path));
+for(const level of ['easy','medium','hard'])for(let i=0;i<500;i++){
+ const q=preschoolQuestion('shapes',level,null,random),[shape,color,size]=q.target.split(':');
+ const matches=q.choices.filter(id=>{const [s,c,z]=id.split(':');return s===shape&&(level==='easy'||c===color)&&(level!=='hard'||z===size);});
+ assert.deepEqual(matches,[q.target],'Une seule réponse respecte la consigne');
+ assert.equal(q.prompt,'Trouve '+shapeLabel(q.target,level)+'.');
+ if(level!=='easy')assert(q.choices.some(id=>{const [s,c]=id.split(':');return s===shape&&c!==color;}),'Même forme, autre couleur');
+ if(level==='hard')assert(q.choices.includes(shape+':'+color+':'+(size==='small'?'large':'small')),'Même forme et couleur, autre taille');
+ assert(shapeMarkup(q.target).includes(size==='small'?'scale(0.53)':'scale(0.95)'));
+}
+assert.equal(shapeLabel('star:blue:small'),'la petite étoile bleue');
+assert.equal(shapeLabel('oval:purple:large'),'le grand ovale violet');
 for(const object of SHADOW_OBJECTS){
  assert.equal(new Set(SHADOW_DISTRACTORS[object.id]).size,3);assert(SHADOW_DISTRACTORS[object.id].every(id=>id!==object.id&&SHADOW_OBJECTS.some(item=>item.id===id)));
  const original=shadowMarkup(object.id),silhouette=shadowMarkup(object.id,true);

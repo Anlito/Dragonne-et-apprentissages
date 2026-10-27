@@ -206,3 +206,7 @@ body.preschool-active #game[data-reading=animal-sounds] .preschool-choice{contai
 
 .scene-detail-drawing{position:relative;display:block;width:100%;height:100%;transform-origin:center;pointer-events:none}
 body.preschool-active .preschool-choice,.observation-choice{container-type:size}.preschool-choice>svg,.observation-choice>svg{width:min(100cqw,100cqh);height:min(100cqw,100cqh)}
+body.preschool-active #game[data-reading=shapes] #choices{grid-template-columns:repeat(3,minmax(0,1fr));max-width:580px}
+body.preschool-active #game[data-reading=shapes] #choices[data-choice-count="4"]{grid-template-columns:repeat(2,minmax(0,1fr));max-width:420px}
+@media(max-width:700px){body.preschool-active #game[data-reading=shapes] #choices{gap:10px}body.preschool-active #game[data-reading=shapes] .preschool-choice{min-height:80px;padding:7px}}
+@media(max-height:550px) and (orientation:landscape){body.preschool-active #game[data-reading=shapes] #choices{grid-template-columns:repeat(3,minmax(0,1fr));max-width:580px;align-self:center}body.preschool-active #game[data-reading=shapes] .preschool-choice{height:100px;min-height:70px;aspect-ratio:auto}}

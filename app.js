@@ -8,7 +8,7 @@ import {CHALLENGE_IDS,challengePlan,uniqueChallengeQuestion} from './challenge.m
 import {DEFAULT_FLUENCY_TEXT,fluencyTokens,fluencyWordCount,fluencyRecord,recordFluencyAttempt,normalizeFluencyText,createFluencyClock} from './fluency.mjs';
 import {MATH_IDS,MATH_LEVELS,placementReward,arithmeticQuestion,multiplicationQuestion} from './maths.mjs';
 import {READING_IDS,READING_META,readingChoices,readingQuestion,selectPiece,matchWord} from './reading.mjs';
-import {PRESCHOOL_IDS,PRESCHOOL_META,preschoolChoices,preschoolQuestion,SHAPES,SOUND_ANIMALS,SHADOW_OBJECTS,shapeMarkup,shadowMarkup,onShadowTarget} from './preschool.mjs';
+import {PRESCHOOL_IDS,PRESCHOOL_META,preschoolChoices,preschoolQuestion,SOUND_ANIMALS,SHADOW_OBJECTS,shapeMarkup,shapeLabel,shapeChoices,shadowMarkup,onShadowTarget} from './preschool.mjs';
 import {SCENE_IDS,SCENE_LEVELS,SCENE_SLOTS,sceneSlots,differenceQuestion,findDifference,observationQuestion,sceneObjectMarkup,observationChoiceMarkup,observationChoiceLabel,createObservationTimer} from './scene-games.mjs';
 import {ACTIVITIES} from './activities.mjs';
 import {fingerMarkup} from './hands.mjs';
@@ -39,7 +39,7 @@ const generateQuestion=factory=>{
  if(['differences','observation','animal-sounds'].includes(activeActivity))return factory();
  const level=activityDifficulty(),key=activeId+':'+activeActivity+':'+level;
  if(!exerciseHistories.has(key))exerciseHistories.set(key,[]);
- const limit=activeActivity==='letters'?profile().letters-1:['numbers'].includes(activeActivity)?8:activeActivity==='shapes'?5:activeActivity==='shadows'?19:activeActivity==='colors'?({easy:2,medium:6,hard:14})[level]:40;
+ const limit=activeActivity==='letters'?profile().letters-1:['numbers'].includes(activeActivity)?8:activeActivity==='shapes'?40:activeActivity==='shadows'?19:activeActivity==='colors'?({easy:2,medium:6,hard:14})[level]:40;
  return variedQuestion(factory,exerciseHistories.get(key),limit);
 };
 let sceneClock=null,sceneEpoch=0;
@@ -61,7 +61,7 @@ function setDragon(el,rank,id=state.dragonId){
  el.querySelector('.rank-equipment')?.remove();
 }
 
-function render(){document.body.classList.toggle('preschool-active',!$('#game').hidden&&isPreschool());renderChallengeProgress();const rank=rankFor(state.score);$('#listen').hidden=isMath();$('#voice-note').hidden=isMath();$$('[data-score]').forEach(el=>el.textContent=state.score);$$('[data-rank]').forEach(el=>el.textContent=rank);$$('[data-progress]').forEach(el=>el.style.width=`${rank===MAX_RANK?100:(state.score%POINTS_PER_RANK)/POINTS_PER_RANK*100}%`);$$('.dragon').forEach(el=>setDragon(el,rank));$('.rank-label').innerHTML=`${rankNames()[rank-1]} · <span data-rank>${rank}</span>/100`;$('#streak').textContent=`Série · ${streak}`;$('#difficulty').textContent=`${profile().label} · ${isPreschool()?preschoolChoices(activityDifficulty())+' choix':isMath()?(activeActivity==='multiply'?(selectedTable?'Table de '+selectedTable:'Tables'):current?.mode==='line'?'Jauge':MATH_LEVELS[activityDifficulty()].choices+' choix'):isReading()?(activeActivity==='traps'?'2 choix':activeActivity==='link-words'?'3 mots':activeActivity==='build-word'?({easy:4,medium:6,hard:8})[activityDifficulty()]+' choix':readingChoices(activityDifficulty())+' choix'):activeActivity==='counting'?profile().numbers+' choix':activeActivity==='numbers'?profile().numbers+' choix':profile().letters+' lettres'}`;document.body.classList.toggle('reduce-motion',!state.motion);document.body.dataset.profile=state.dragonId;$$('.dragon').forEach(el=>el.setAttribute('aria-label',dragonMeta().companion));setDragon($('.profile-avatar'),rank);$('#profile-toggle').setAttribute('aria-label','Changer d’enfant, '+childLabel());$('#greet').setAttribute('aria-label','Voir '+(state.dragonId==='dragonne'?'la dragonne':'le dragon')+' en grand');$('#evolution-title').textContent=dragonMeta().companion+' grandit !';renderProfileChoices();renderActivities();renderSceneHeader();}
+function render(){document.body.classList.toggle('preschool-active',!$('#game').hidden&&isPreschool());renderChallengeProgress();const rank=rankFor(state.score);$('#listen').hidden=isMath();$('#voice-note').hidden=isMath();$$('[data-score]').forEach(el=>el.textContent=state.score);$$('[data-rank]').forEach(el=>el.textContent=rank);$$('[data-progress]').forEach(el=>el.style.width=`${rank===MAX_RANK?100:(state.score%POINTS_PER_RANK)/POINTS_PER_RANK*100}%`);$$('.dragon').forEach(el=>setDragon(el,rank));$('.rank-label').innerHTML=`${rankNames()[rank-1]} · <span data-rank>${rank}</span>/100`;$('#streak').textContent=`Série · ${streak}`;$('#difficulty').textContent=`${profile().label} · ${isPreschool()?(activeActivity==='shapes'?shapeChoices(activityDifficulty()):preschoolChoices(activityDifficulty()))+' choix':isMath()?(activeActivity==='multiply'?(selectedTable?'Table de '+selectedTable:'Tables'):current?.mode==='line'?'Jauge':MATH_LEVELS[activityDifficulty()].choices+' choix'):isReading()?(activeActivity==='traps'?'2 choix':activeActivity==='link-words'?'3 mots':activeActivity==='build-word'?({easy:4,medium:6,hard:8})[activityDifficulty()]+' choix':readingChoices(activityDifficulty())+' choix'):activeActivity==='counting'?profile().numbers+' choix':activeActivity==='numbers'?profile().numbers+' choix':profile().letters+' lettres'}`;document.body.classList.toggle('reduce-motion',!state.motion);document.body.dataset.profile=state.dragonId;$$('.dragon').forEach(el=>el.setAttribute('aria-label',dragonMeta().companion));setDragon($('.profile-avatar'),rank);$('#profile-toggle').setAttribute('aria-label','Changer d’enfant, '+childLabel());$('#greet').setAttribute('aria-label','Voir '+(state.dragonId==='dragonne'?'la dragonne':'le dragon')+' en grand');$('#evolution-title').textContent=dragonMeta().companion+' grandit !';renderProfileChoices();renderActivities();renderSceneHeader();}
 function say(text,done){
   let finished=false;const finish=()=>{if(finished)return;finished=true;done?.();};
   if((IS_PREVIEW&&!previewAudioArmed)||!state.sound||!('speechSynthesis'in window)){finish();return;}
@@ -590,17 +590,16 @@ function nextPreschool(){
  if(activeActivity==='animal-sounds')animalHistory.push(current.target);
  mistakes=0;locked=false;
  $('#game').classList.remove('question-enter');void $('#game').offsetWidth;$('#game').classList.add('question-enter');
- const board=$('#reading-board'),choices=$('#choices');board.replaceChildren();choices.replaceChildren();choices.style.setProperty('--preschool-count',current.choices.length);
+ const board=$('#reading-board'),choices=$('#choices');board.replaceChildren();choices.replaceChildren();choices.style.setProperty('--preschool-count',current.choices.length);choices.dataset.choiceCount=current.choices.length;
  if(activeActivity==='colors'){const paints=document.createElement('div');paints.className='paint-recipe';paints.setAttribute('aria-label',current.ingredients.map(id=>PAINTS[id][0]).join(' et '));paints.innerHTML=paintMarkup(current.ingredients[0])+'<span aria-hidden="true">+</span>'+paintMarkup(current.ingredients[1])+'<span aria-hidden="true">= ?</span>';board.append(paints);}
  if(activeActivity==='shadows'){
   const stage=document.createElement('button');stage.type='button';stage.id='shadow-target';stage.className='shadow-stage';stage.setAttribute('aria-label','Poser l’ombre sélectionnée sur l’objet');stage.innerHTML='<span class="shadow-object">'+shadowMarkup(current.target)+'</span>';
   stage.onclick=()=>{if(locked)return;if(!selectedShadow){$('#feedback').textContent='Choisis une ombre, puis touche l’objet.';say('Touche une ombre, puis touche l’objet.');return;}choosePreschool(selectedShadow.value,selectedShadow.button);};board.append(stage);
  }
- const color=['#a7b789','#b7a4cd','#e3bc70','#cd9381'][Math.floor(Math.random()*4)];
  for(const value of current.choices){
   const button=document.createElement('button');button.type='button';button.className='letter preschool-choice';button.dataset.value=value;
   if(activeActivity==='colors'){button.innerHTML=paintMarkup(value);button.setAttribute('aria-label',PAINTS[value][0]);button.onclick=()=>choosePreschool(value,button);}
-  else if(activeActivity==='shapes'){button.innerHTML=shapeMarkup(value,color);button.setAttribute('aria-label',SHAPES.find(item=>item.id===value).name);button.onclick=()=>choosePreschool(value,button);}
+  else if(activeActivity==='shapes'){button.innerHTML=shapeMarkup(value);button.setAttribute('aria-label',shapeLabel(value));button.onclick=()=>choosePreschool(value,button);}
   else if(activeActivity==='animal-sounds'){
    const animal=SOUND_ANIMALS.find(item=>item.id===value);const image=document.createElement('span');image.className='sound-animal';image.style.backgroundImage='url('+animal.sprite+')';const columns=animal.cols||3,rows=animal.rows||2;image.style.backgroundSize=(columns*100)+'% '+(rows*100)+'%';image.style.backgroundPosition=(animal.tile%columns*100/(columns-1))+'% '+(Math.floor(animal.tile/columns)*100/(rows-1))+'%';image.setAttribute('aria-hidden','true');button.append(image);button.setAttribute('aria-label',animal.name);button.onclick=()=>choosePreschool(value,button);
   }else{button.innerHTML=shadowMarkup(value,true);button.setAttribute('aria-label','Ombre : '+SHADOW_OBJECTS.find(item=>item.id===value).name.toLowerCase());button.setAttribute('aria-pressed','false');wireShadow(button,value);}

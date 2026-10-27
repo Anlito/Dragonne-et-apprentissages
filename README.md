@@ -4,6 +4,12 @@ Première version de la PWA Android « Dragonne-et-apprentissages », pensée po
 
 ## Fonctionnement
 
+### 27 octobre 2026 — Formes progressives (v39)
+
+Les formes proposent trois niveaux : facile, reconnaître une forme parmi trois dessins de couleurs et tailles variées ; moyen, reconnaître forme et couleur parmi quatre propositions ; difficile, reconnaître forme, couleur et taille parmi six propositions. Les consignes vocales et le haut-parleur décrivent les critères demandés. Le rectangle rejoint les six formes initiales aux niveaux moyen et difficile, avec des voisins proches (rond/ovale, carré/rectangle, triangle/losange). Chaque question possède une seule réponse correcte ; les distracteurs comprennent la même forme dans une autre couleur et, au niveau difficile, la même forme et couleur dans l’autre taille. Petit et grand utilisent deux échelles fixes dans des cartes identiques, sans indice dans le texte visible. Les 56 combinaisons forme/couleur/taille et leurs propositions sont générées, avec un historique évitant les répétitions récentes. La grille utilise trois colonnes (deux au niveau moyen), adaptée au portrait et au paysage.
+
+La difficulté propre à chaque enfant, l’aperçu parent, le défi de 20, la suppression d’un mauvais choix et les points 10/5/1 avec bonus sont conservés. Les formes cachées restent une prochaine variante. Sources : preschool.mjs (formes, couleurs, consignes et génération), app.js (rendu et difficulté), style.css (grille). Vérifications : check-preschool.mjs dont 1 500 questions ciblant l’unicité de réponse et les critères proches, contrôles du défi et des nouvelles activités, syntaxe et aperçu navigateur. Cache PWA v39.
+
 ### 27 octobre 2026 — Défi toujours en première position (v38)
 
 « Mon défi · 20 exercices » reste le premier bloc de l’accueil, avant les couleurs et les autres jeux. L’ordre est fixé dans index.html et activities.mjs, puis garanti à chaque affichage par renderActivities dans app.js. Le réglage parent permettant de masquer le défi reste respecté. parents.html est resynchronisée avec le modèle d’accueil ; le cache PWA passe en v38. Vérifications : ordre initial et registre, synchronisation de la page parents et syntaxe JavaScript. Aucun changement des points ni des sauvegardes.
