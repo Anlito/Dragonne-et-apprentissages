@@ -274,6 +274,7 @@ $$('.companion-open').forEach(button=>button.onclick=openCompanion);
 $('#companion-view').addEventListener('click',event=>{if(event.target!==event.currentTarget)return;const r=event.currentTarget.getBoundingClientRect();if(event.clientX<r.left||event.clientX>r.right||event.clientY<r.top||event.clientY>r.bottom)event.currentTarget.close();});
 
 function renderActivities(){
+  document.querySelector('.activities').prepend($('#challenge-start'));
   let visible=0;
   for(const activity of ACTIVITIES){const shown=state.activities[activity.id];$('#'+activity.button).hidden=!shown;if(shown)visible++;}
   $('#activities-empty').hidden=visible!==0;

@@ -4,6 +4,10 @@ Première version de la PWA Android « Dragonne-et-apprentissages », pensée po
 
 ## Fonctionnement
 
+### 27 octobre 2026 — Défi toujours en première position (v38)
+
+« Mon défi · 20 exercices » reste le premier bloc de l’accueil, avant les couleurs et les autres jeux. L’ordre est fixé dans index.html et activities.mjs, puis garanti à chaque affichage par renderActivities dans app.js. Le réglage parent permettant de masquer le défi reste respecté. parents.html est resynchronisée avec le modèle d’accueil ; le cache PWA passe en v38. Vérifications : ordre initial et registre, synchronisation de la page parents et syntaxe JavaScript. Aucun changement des points ni des sauvegardes.
+
 ### 26 octobre 2026 — Banque 100, observation 10 s, couleurs et page parent (v37)
 
 La page parents.html remplace la fenêtre de réglages depuis le bouton cadenas. Elle conserve la petite vérification de calcul, puis organise les contrôles en quatre rubriques : Activités et aperçus, Défi de 20, Progression, Réglages. Le profil à régler reste visible en haut. Un sélecteur permet de se concentrer sur un seul jeu au lieu de parcourir tous les réglages. Visibilité et difficulté se règlent dans la carte de l’activité ; le texte de fluence reste éditable dans un panneau repliable. Les points de départ, la remise à zéro, les évolutions et la suppression d’un profil restent disponibles dans les rubriques correspondantes.

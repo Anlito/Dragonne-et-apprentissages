@@ -1,7 +1,7 @@
 // Une entrée par activité : les nouveaux jeux seront visibles par défaut.
 export const ACTIVITIES=[
- {id:'colors',button:'colors-start',label:'Le mélange des couleurs',colorTile:true},
   {id:'challenge',button:'challenge-start',label:'Mon défi · 20 exercices',specialTile:1},
+ {id:'colors',button:'colors-start',label:'Le mélange des couleurs',colorTile:true},
   ...[['shapes','Les formes'],['animal-sounds','Les cris des animaux'],['shadows','Le puzzle des ombres']].map(([id,label],preschoolTile)=>({id,button:id+'-start',label,preschoolTile})),
   ...[['differences','Le jeu des différences'],['observation','Observe bien !']].map(([id,label],sceneTile)=>({id,button:id+'-start',label,sceneTile})),
   {id:'letters',button:'letters',label:'Les lettres',tile:0},
